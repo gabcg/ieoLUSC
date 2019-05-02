@@ -45,17 +45,17 @@ into the output of the report.
 ```{r, message=FALSE}
 library(SummarizedExperiment)
 
-se <- readRDS(file.path("rawCounts", "seLUSC.rds"))
-se
+se.unpaired <- readRDS(file.path("rawCounts", "seLUSC.rds"))
+se.unpaired
 ```
 
 Explore the column (phenotypic) data, which in this case corresponds to clinical
 variables, and their corresponding metadata.
 
 ```{r}
-dim(colData(se))
-colData(se)[1:5, 1:5]
-mcols(colData(se), use.names=TRUE)
+dim(colData(se.unpaired))
+colData(se.unpaired)[1:5, 1:5]
+mcols(colData(se.unpaired), use.names=TRUE)
 ```
 
 These metadata consists of two columns of information about the clinical variables.
@@ -69,8 +69,26 @@ form and the `Public ID` attribute search.
 Now, explore the row (feature) data.
 
 ```{r}
-rowData(se)
-rowRanges(se)
+rowData(se.unpaired)
+rowRanges(se.unpaired)
+```
+
+We decide only to use paired reads. In order to get them, we execute the following code.
+
+```{r}
+# get the number of occurences of each patient
+occur <- data.frame(table(substr(colnames(se.unpaired), 9, 12)))
+
+# get those that occur twice
+paired_df <- occur[occur$Freq > 1,]
+paired <- as.vector(paired_df$Var1)
+paired <- paired[2:length(paired)]
+
+mask <- is.element(substr(colnames(se.unpaired), 9, 12), paired)
+
+se <- se.unpaired[ ,mask]
+
+saveRDS(se, file.path("results", "se.paired.rds"))
 ```
 
 To perform quality assessment and normalization we need first to load the
@@ -81,7 +99,7 @@ create a `DGEList' object.
 library(edgeR)
 
 dge <- DGEList(counts=assays(se)$counts, genes=mcols(se))
-saveRDS(dge, file.path("results", "dge.rds"))
+saveRDS(dge, file.path("results", "dge.paired.rds"))
 ```
 
 Now calculate $\log_2$ CPM values of expression and put them as an additional
