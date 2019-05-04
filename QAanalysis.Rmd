@@ -285,7 +285,7 @@ if(any(lo$y > 2) || any(lo$y < -2)){ big_n <- append(big_n,samplename)} else if 
 }
 ```
 
-In the MA-plots of the normal samples, we found `r length(big_c) ` samples with some expresion very different of the mean ( M > 2 or M < -2), with the regresion line in red. `r length(medium_c)` samples with some expresion moderatly different from the mean ( M <= 2 and M >= 1 or M >=-2 and M <= -1), with the regresion line in purple. And finally `r length(small_c)` samples that have an expresion-level without any indices of dependent biases (M < 1 or M > -1), with the regresion line in green. 
+In the MA-plots of the normal samples, we found `r length(big_n) ` samples with some expresion very different of the mean ( M > 2 or M < -2), with the regresion line in red. `r length(medium_n)` samples with some expresion moderatly different from the mean ( M <= 2 and M >= 1 or M >=-2 and M <= -1), with the regresion line in purple. And finally `r length(small_n)` samples that have an expresion-level without any indices of dependent biases (M < 1 or M > -1), with the regresion line in green. 
 
 ```{r}
 big_n
