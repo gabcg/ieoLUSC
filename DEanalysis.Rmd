@@ -33,8 +33,6 @@ se.filt.unnorm <- readRDS(file.path("results", "se.paired.filt.unnorm.rds"))
 dge.filt.unnorm <- readRDS(file.path("results", "dge.paired.filt.unnorm.rds"))
 se.filt <- readRDS(file.path("results", "se.paired.filt.rds"))
 dge.filt <- readRDS(file.path("results", "dge.paired.filt.rds"))
-
-
 ```
 
 # Differential expression
@@ -42,11 +40,13 @@ dge.filt <- readRDS(file.path("results", "dge.paired.filt.rds"))
 We perform a simple examination of expression changes and their associated p-values
 using the R/Bioconductor package [sva](http://bioconductor.org/packages/sva).
 
+As there are no factors to adjust, we give ~1 as the intercept term in the model.
+
 ```{r, message=FALSE}
 library(sva)
-mod <- model.matrix(~type + portionanalyte, data = colData(se.filt))
-mod0 <- model.matrix(~portionanalyte, data = colData(se.filt))
-#sv <- sva(logCPM, mod, mod0)
+mod <- model.matrix(~type + 1, data = colData(se.filt))
+mod0 <- model.matrix(~1, data = colData(se.filt))
+sv <- sva(logCPM, mod, mod0)
 pv <- f.pvalue(assays(se.filt)$logCPM, mod, mod0)
 sum(p.adjust(pv, method="fdr") < 0.01)
 ```
