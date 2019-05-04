@@ -37,7 +37,7 @@ opts_chunk$set(cache=TRUE,
 
 Lung cancer, specifically lung squamous cell carcinoma, was assessed and analyzed in this experiment. In this dataset, a total of xxx tumors were submitted to the Cancer Genome Atlas Program (TCGA).
 
-We start importing the raw table of counts. From this, we see that 20115 genes from a total of 553 samples are in this data. 
+We start importing the raw table of counts. From this, we see that 20115 genes from a total of 553 samples are in this data.
 
 <!--
 The option 'message=FALSE' avoid dumping R messages such as "Loading required package: methods"
@@ -52,7 +52,7 @@ se.unpaired
 ```
 
 Next, we explored the column (phenotypic) data, which in this case corresponds to clinical
-variables, and their corresponding metadata. For example, the column "type" consists of tumor and normal labels. Other information such as gender, tumor stage, and smoking status are also shown. 
+variables, and their corresponding metadata. For example, the column "type" consists of tumor and normal labels. Other information such as gender, tumor stage, and smoking status are also shown.
 
 In any case, we can access all the possible labels with the last line of code, which returns two columns of information about the clinical variables. One called `labelDescription` contains a succint description of the variable, often
 not more self-explanatory than the variable name itself, and the other called
@@ -139,10 +139,10 @@ sort(sampledepth)
 ## Distribution of expression levels among samples
 
 Next, we will look at the distribution of expression values per sample in terms of
-logarithmic CPM units. We display tumor and normal samples separately, and are shown 
-in Figure \@ref(fig:distRawExp). Each colored line in the graphs below represent a sample. 
-In both graphs, we see two modes. The low mode represents genes not expressed in that sample. 
-The second mode represents the genes that are expressed. 
+logarithmic CPM units. We display tumor and normal samples separately, and are shown
+in Figure \@ref(fig:distRawExp). Each colored line in the graphs below represent a sample.
+In both graphs, we see two modes. The low mode represents genes not expressed in that sample.
+The second mode represents the genes that are expressed.
 
 <!---
 the option echo=FALSE hides the R code. When plotting in general one does not
@@ -159,7 +159,7 @@ multidensity(as.list(as.data.frame(assays(se[, se$type == "tumor"])$logCPM)),
 multidensity(as.list(as.data.frame(assays(se[, se$type == "normal"])$logCPM)),
                           xlab="log 2 CPM", legend=NULL, main="Normal samples", las=1)
 ```
-In both graphs, we see some genes that deviate a little from the rest. These could be potential outliers and we have noted them for later analysis. 
+In both graphs, we see some genes that deviate a little from the rest. These could be potential outliers and we have noted them for later analysis.
 
 ## Distribution of expression levels among genes
 
@@ -173,7 +173,7 @@ abline(v=1, col="red", lwd=2)
 
 ## Filtering of lowly-expressed genes
 
-RNA sequence expression profiles that come from lowly-expressed genes can lead to artifacts in downstream differential expression analyses. Thus, it is common to set a threshold and filter out genes that fall below this value. 
+RNA sequence expression profiles that come from lowly-expressed genes can lead to artifacts in downstream differential expression analyses. Thus, it is common to set a threshold and filter out genes that fall below this value.
 In the light of this plot above, we may consider a cutoff of 1 log CPM unit as minimum value of expression to select genes being expressed across samples. Using this cutoff we proceed to filter out lowly-expressed genes. Now, we have a total of 11872 genes and 102 samples.
 
 ```{r}
@@ -188,13 +188,13 @@ dim(dge.filt)
 We then store the un-normalized versions of the filtered expression data.
 
 ```{r}
-saveRDS(se.filt, file.path("results", "se.filt.unnorm.rds"))
-saveRDS(dge.filt, file.path("results", "dge.filt.unnorm.rds"))
+saveRDS(se.filt, file.path("results", "se.paired.filt.unnorm.rds"))
+saveRDS(dge.filt, file.path("results", "dge.paired.filt.unnorm.rds"))
 ```
 
 ## Normalization
 
-Next, we calculate the normalization factors on the filtered expression data set using the calcNormFactors function. 
+Next, we calculate the normalization factors on the filtered expression data set using the calcNormFactors function.
 
 ```{r}
 dge.filt <- calcNormFactors(dge.filt)
@@ -210,8 +210,8 @@ assays(se.filt)$logCPM <- cpm(dge.filt, log=TRUE, normalized.lib.sizes=TRUE, pri
 Store normalized versions of the filtered expression data.
 
 ```{r}
-saveRDS(se.filt, file.path("results", "se.filt.rds"))
-saveRDS(dge.filt, file.path("results", "dge.filt.rds"))
+saveRDS(se.filt, file.path("results", "se.paired.filt.rds"))
+saveRDS(dge.filt, file.path("results", "dge.paired.filt.rds"))
 ```
 
 ## MA-plots
@@ -230,36 +230,64 @@ control the relative image size in *inches*. The final image size results from
 par(mfrow=c(22, 3), mar=c(4, 5, 3, 1))
 setmp <- se.filt[, se.filt$type == "tumor"]
 dgetmp <- dge.filt[, se.filt$type == "tumor"]
+big_c <- character()
+medium_c <- character()
+small_c <- character()
 for (i in 1:ncol(setmp)) {
   A <- rowMeans(assays(setmp)$logCPM)
   M <- assays(setmp)$logCPM[, i] - A
-  samplename <- substr(as.character(setmp$bcr_patient_barcode[i]), 1, 12)
-  smoothScatter(A, M, main=samplename, las=1)
+  samplename <- substr(as.character(colnames(setmp[,i])), 1, 12)
+  smoothScatter(A, M, main=samplename,ylim = c(-5,5), las=1)
   abline(h=0, col="blue", lwd=2)
   lo <- lowess(M ~ A)
-  lines(lo$x, lo$y, col="red", lwd=2)
+  lines(lo$x, lo$y, col= if(any(lo$y > 2) || any(lo$y < -2)){"red"} else if (any(lo$y <= 2 & lo$y >= 1) || any(lo$y >= -2 & lo$y <= -1)){"purple"} else if(any(lo$y < 1) || any(lo$y > -1)){"green"}, lwd=2)
+
+if(any(lo$y > 2) || any(lo$y < -2)){ big_c_c <- append(big_c,samplename)} else if (any(lo$y <= 2 & lo$y >= 1) || any(lo$y >= -2 & lo$y <= -1)){ medium_c <- append(medium_c,samplename)} else if(any(lo$y < 1) || any(lo$y > -1)){small_c <- append(small_c,samplename)}
 }
 ```
 
-WAITING FOR PROFESSOR TO RESPOND TO THE MESSAGE ON DISCUSSION BOARD  Let's
+In the MA-plots of the tumorous samples, we found `r length(big_c) ` samples with some expresion very different of the mean ( M > 2 or M < -2), with the regresion line in red. `r length(medium_c)` samples with some expresion moderatly different from the mean ( M <= 2 and M >= 1 or M >=-2 and M <= -1), with the regresion line in purple. And finally `r length(small_c)` samples that have an expresion-level without any indices of dependent biases (M < 1 or M > -1), with the regresion line in green.
+
+```{r}
+big_c
+
+medium_c
+
+small_c
+```
+We do not observe samples with major expression-level dependent biases. Let's
 look now to the normal samples in Figure \@ref(fig:maPlotsNormal).
 
 ```{r maPlotsNormal, fig.height=18, fig.width=6, dpi=100, echo=FALSE, fig.cap="MA-plots of the normal samples."}
 par(mfrow=c(9, 3), mar=c(4, 5, 3, 1))
 setmp <- se.filt[, se.filt$type == "normal"]
 dgetmp <- dge.filt[, se$type == "normal"]
+big_n <- character()
+medium_n <- character()
+small_n <- character()
 for (i in 1:ncol(setmp)) {
   A <- rowMeans(assays(setmp)$logCPM)
   M <- assays(setmp)$logCPM[, i] - A
-  samplename <- substr(as.character(setmp$bcr_patient_barcode[i]), 1, 12)
-  smoothScatter(A, M, main=samplename, las=1)
+  samplename <- substr(as.character(colnames(setmp[,i])), 1, 12)
+  smoothScatter(A, M, main=samplename,ylim = c(-5,5), las=1)
   abline(h=0, col="blue", lwd=2)
   lo <- lowess(M ~ A)
-  lines(lo$x, lo$y, col="red", lwd=2)
+  lines(lo$x, lo$y, col= if(any(lo$y > 2) || any(lo$y < -2)){"red"} else if (any(lo$y <= 2 & lo$y >= 1) || any(lo$y >= -2 & lo$y <= -1)){"purple"} else if(any(lo$y < 1) || any(lo$y > -1)){"green"}, lwd=2)
+
+if(any(lo$y > 2) || any(lo$y < -2)){ big_n <- append(big_n,samplename)} else if (any(lo$y <= 2 & lo$y >= 1) || any(lo$y >= -2 & lo$y <= -1)){ medium_n <- append(medium_n,samplename)} else if(any(lo$y < 1) || any(lo$y > -1)){small_n <- append(small_n,samplename)}
 }
 ```
 
-WAITING FOR PROFESSOR TO RESPOND TO THE MESSAGE ON DISCUSSION BOARD.
+In the MA-plots of the normal samples, we found `r length(big_n) ` samples with some expresion very different of the mean ( M > 2 or M < -2), with the regresion line in red. `r length(medium_n)` samples with some expresion moderatly different from the mean ( M <= 2 and M >= 1 or M >=-2 and M <= -1), with the regresion line in purple. And finally `r length(small_n)` samples that have an expresion-level without any indices of dependent biases (M < 1 or M > -1), with the regresion line in green.
+
+```{r}
+big_n
+
+medium_n
+
+small_n
+```
+We do not observe either important expression-level dependent biases among the normal samples.
 
 ## Batch identification
 
@@ -289,7 +317,7 @@ From this information we can make the following observations:
 
   * All samples were sequenced at the same center
   * Tumor and normal samples were collected in the same vial except one:
-  
+
 ```{r}
 colnames(se.filt)[samplevial == "01B"]
 ```
@@ -345,9 +373,10 @@ of the samples and their relationship with TSS.-->
 
 ```{r mdsPlot, fig.height=7, fig.width=14, dpi=100, echo=TRUE, fig.cap="Figure S7: Multidimensional scaling plot of the samples."}
 plotMDS(dge.filt, labels=outcome, col=batch)
-legend("bottomleft", paste("Batch", sort(unique(batch)), levels(factor(plate))),
+legend("bottomleft", paste("Batch", sort(unique(batch)), levels(factor(portionanalyte))),
        fill=sort(unique(batch)), inset=0.05)
 ```
+
 
 ## Session information
 
