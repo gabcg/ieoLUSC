@@ -271,13 +271,16 @@ across samples.
 ```{r}
 tss <- substr(colnames(se.filt), 6, 7)
 table(data.frame(TYPE=se.filt$type, TSS=tss))
-      
+
 center <- substr(colnames(se.filt), 27, 28)
 table(data.frame(TYPE=se.filt$type, CENTER=center))
+
 plate <- substr(colnames(se.filt), 22, 25)
 table(data.frame(TYPE=se.filt$type, PLATE=plate))
+
 portionanalyte <- substr(colnames(se.filt), 18, 20)
 table(data.frame(TYPE=se.filt$type, PORTIONANALYTE=portionanalyte))
+
 samplevial <- substr(colnames(se.filt), 14, 16)
 table(data.frame(TYPE=se.filt$type, SAMPLEVIAL=samplevial))
 ```
@@ -285,16 +288,14 @@ table(data.frame(TYPE=se.filt$type, SAMPLEVIAL=samplevial))
 From this information we can make the following observations:
 
   * All samples were sequenced at the same center
-
   * Tumor and normal samples were collected in the same vial except one:
+  
 ```{r}
 colnames(se.filt)[samplevial == "01B"]
 ```
 
   * Samples were collected evenly across different tissue source sites (TSS).
-
   * Samples were sequenced within the different plates, which could lead to a batch effect.
-
   * Samples of normal cells have two different portion of analyte, while the tumor samples have five different portions.
 
 We are going to use the portion of analyte as surrogate of batch effect indicator. Considering our outcome
@@ -305,19 +306,16 @@ the cross-classification of this outcome with portion of analyste.
 table(data.frame(TYPE=se.filt$type, PORTIONANALYTE=portionanalyte))
 ```
 
-As we can see here, the majority of normal samples (48) come from the "01R" analyte and 3 come from the "11R" analyte. However, the tumor samples span across five different analytes. This could potentially lead to a batch effect.
-
+As we can see here, the majority of normal samples (48) come from the "01R"" analyte and 3 come from the "11R" analyte. However, the tumor samples span across five different analytes. This could potentially lead to a batch effect.
 
 We examine now how samples group together by hierarchical clustering and multidimensional
-scaling, annotating the outcome of interest and the surrogate of batch indicator, or portion of analyte in our case. We
-calculate again log CPM values with a higher prior count to moderate extreme fold-changes
-produced by low counts. The resulting dendrogram is shown in Figure \@ref(fig:sampleClustering).
+scaling, annotating the outcome of interest and the surrogate of batch indicator, or portion of analyte in our case. We calculate again log CPM values with a higher prior count to moderate extreme fold-changes produced by low counts. The resulting dendrogram is shown in Figure \@ref(fig:sampleClustering).
 
 ```{r sampleClustering, fig.height=7, fig.width=14, dpi=100, echo=TRUE, fig.cap="Figure S6: Hierarchical clustering of the samples."}
 logCPM <- cpm(dge.filt, log=TRUE, prior.count=3)
 d <- as.dist(1-cor(logCPM, method="spearman"))
 sampleClustering <- hclust(d)
-batch <- as.integer(factor(plate))
+batch <- as.integer(factor(portionanalyte))
 sampleDendrogram <- as.dendrogram(sampleClustering, hang=0.1)
 names(batch) <- colnames(se.filt)
 outcome <- paste(substr(colnames(se.filt), 9, 12), as.character(se.filt$type), sep="-")
@@ -331,20 +329,19 @@ sampleDendrogram <- dendrapply(sampleDendrogram,
                                  x
                                }, batch, outcome)
 plot(sampleDendrogram, main="Hierarchical clustering of samples")
-legend("topright", paste("Batch", sort(unique(batch)), levels(factor(plate))), fill=sort(unique(batch)))
+legend("topright", paste("Batch", sort(unique(batch)), levels(factor(portionanalyte))), fill=sort(unique(batch)))
 ```
 
-We can observe that samples cluster primarily by sample type, tumor or normal. TSS seems to have
-a stronger effect among the normal samples, while it distributes better among the tumor samples.
-We may consider discarding samples leading to an unbalanced distribution of the outcome across batches.
+We can observe that samples cluster primarily by sample type, tumor or normal. The portion of analyte seems to have a stronger effect among the normal samples, while it distributes better among the tumor samples. We may consider discarding samples leading to an unbalanced distribution of the outcome across batches.
 
-In Figure \@ref(fig:mdsPlot) we show the corresponding MDS plot. Here we see more clearly that the
-first source of variation separates tumor from normal samples. We can also observe that two tumor
+In Figure \@ref(fig:mdsPlot) we show the corresponding MDS plot. Here we see more clearly that the first source of variation separates tumor from normal samples, and we don't see any sample that is separated from any cluster.
+
+<!--We can also observe that two tumor
 samples, corresponding to individuals `KL-8404` and `KN-8427` are separated from the rest, just as
 it happens in the hierchical clustering. A closer examination of their corresponding MA-plots also
 reveals a slight dependence of expression changes on average expression. We may consider discarding
 these two samples and doing the MDS plot again to have a closer look to the differences among the rest
-of the samples and their relationship with TSS.
+of the samples and their relationship with TSS.-->
 
 ```{r mdsPlot, fig.height=7, fig.width=14, dpi=100, echo=TRUE, fig.cap="Figure S7: Multidimensional scaling plot of the samples."}
 plotMDS(dge.filt, labels=outcome, col=batch)
