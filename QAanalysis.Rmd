@@ -237,17 +237,31 @@ control the relative image size in *inches*. The final image size results from
 par(mfrow=c(22, 3), mar=c(4, 5, 3, 1))
 setmp <- se.filt[, se.filt$type == "tumor"]
 dgetmp <- dge.filt[, se.filt$type == "tumor"]
+big_c <- character()
+medium_c <- character()
+small_c <- character()
 for (i in 1:ncol(setmp)) {
   A <- rowMeans(assays(setmp)$logCPM)
   M <- assays(setmp)$logCPM[, i] - A
-  samplename <- substr(as.character(setmp$bcr_patient_barcode[i]), 1, 12)
-  smoothScatter(A, M, main=samplename, las=1)
+  samplename <- substr(as.character(colnames(setmp[,i])), 1, 12)
+  smoothScatter(A, M, main=samplename,ylim = c(-5,5), las=1)
   abline(h=0, col="blue", lwd=2)
   lo <- lowess(M ~ A)
-  lines(lo$x, lo$y, col="red", lwd=2)
+  lines(lo$x, lo$y, col= if(any(lo$y > 2) || any(lo$y < -2)){"red"} else if (any(lo$y <= 2 & lo$y >= 1) || any(lo$y >= -2 & lo$y <= -1)){"purple"} else if(any(lo$y < 1) || any(lo$y > -1)){"green"}, lwd=2)
+  
+if(any(lo$y > 2) || any(lo$y < -2)){ big_c_c <- append(big_c,samplename)} else if (any(lo$y <= 2 & lo$y >= 1) || any(lo$y >= -2 & lo$y <= -1)){ medium_c <- append(medium_c,samplename)} else if(any(lo$y < 1) || any(lo$y > -1)){small_c <- append(small_c,samplename)}
 }
 ```
 
+In the MA-plots of the tumorous samples, we found `r length(big_c) ` samples with some expresion very different of the mean ( M > 2 or M < -2), with the regresion line in red. `r length(medium_c)` samples with some expresion moderatly different from the mean ( M <= 2 and M >= 1 or M >=-2 and M <= -1), with the regresion line in purple. And finally `r length(small_c)` samples that have an expresion-level without any indices of dependent biases (M < 1 or M > -1), with the regresion line in green. 
+
+```{r}
+big_c
+
+medium_c
+
+small_c
+```
 We do not observe samples with major expression-level dependent biases. Let's
 look now to the normal samples in Figure \@ref(fig:maPlotsNormal).
 
@@ -255,17 +269,31 @@ look now to the normal samples in Figure \@ref(fig:maPlotsNormal).
 par(mfrow=c(9, 3), mar=c(4, 5, 3, 1))
 setmp <- se.filt[, se.filt$type == "normal"]
 dgetmp <- dge.filt[, se$type == "normal"]
+big_n <- character()
+medium_n <- character()
+small_n <- character()
 for (i in 1:ncol(setmp)) {
   A <- rowMeans(assays(setmp)$logCPM)
   M <- assays(setmp)$logCPM[, i] - A
   samplename <- substr(as.character(setmp$bcr_patient_barcode[i]), 1, 12)
-  smoothScatter(A, M, main=samplename, las=1)
+  smoothScatter(A, M, main=samplename,ylim = c(-5,5), las=1)
   abline(h=0, col="blue", lwd=2)
   lo <- lowess(M ~ A)
-  lines(lo$x, lo$y, col="red", lwd=2)
+  lines(lo$x, lo$y, col= if(any(lo$y > 2) || any(lo$y < -2)){"red"} else if (any(lo$y <= 2 & lo$y >= 1) || any(lo$y >= -2 & lo$y <= -1)){"purple"} else if(any(lo$y < 1) || any(lo$y > -1)){"green"}, lwd=2)
+  
+if(any(lo$y > 2) || any(lo$y < -2)){ big_n <- append(big_n,samplename)} else if (any(lo$y <= 2 & lo$y >= 1) || any(lo$y >= -2 & lo$y <= -1)){ medium_n <- append(medium_n,samplename)} else if(any(lo$y < 1) || any(lo$y > -1)){small_n <- append(small_n,samplename)}
 }
 ```
 
+In the MA-plots of the normal samples, we found `r length(big_c) ` samples with some expresion very different of the mean ( M > 2 or M < -2), with the regresion line in red. `r length(medium_c)` samples with some expresion moderatly different from the mean ( M <= 2 and M >= 1 or M >=-2 and M <= -1), with the regresion line in purple. And finally `r length(small_c)` samples that have an expresion-level without any indices of dependent biases (M < 1 or M > -1), with the regresion line in green. 
+
+```{r}
+big_n
+
+medium_n
+
+small_n
+```
 We do not observe either important expression-level dependent biases among the normal samples.
 
 ## Batch identification
