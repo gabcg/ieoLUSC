@@ -241,7 +241,7 @@ for (i in 1:ncol(setmp)) {
   smoothScatter(A, M, main=samplename,ylim = c(-5,5), las=1)
   abline(h=0, col="blue", lwd=2)
   lo <- lowess(M ~ A)
-  lines(lo$x, lo$y, col= if(any(lo$y > 2) || any(lo$y < -2)){"red"} else if (any(lo$y <= 2 & lo$y >= 1) || any(lo$y >= -2 & lo$y <= -1)){"purple"} else if(any(lo$y < 1) || any(lo$y > -1)){"green"}, lwd=2)
+  lines(lo$x, lo$y, col= if(any(lo$y > 2) || any(lo$y < -2)){"red"} else if (any(lo$y <= 2 & lo$y >= 1) || any(lo$y >= -2 & lo$y <= -1)){"chocolate1"} else if(any(lo$y < 1) || any(lo$y > -1)){"green"}, lwd=2)
 
 if(any(lo$y > 2) || any(lo$y < -2)){ big_c <- append(big_c,samplename)} else if (any(lo$y <= 2 & lo$y >= 1) || any(lo$y >= -2 & lo$y <= -1)){ medium_c <- append(medium_c,samplename)} else if(any(lo$y < 1) || any(lo$y > -1)){small_c <- append(small_c,samplename)}
 }
@@ -250,7 +250,7 @@ if(any(lo$y > 2) || any(lo$y < -2)){ big_c <- append(big_c,samplename)} else if 
 In the MA-plots of the tumor samples, we observed the following:
 
 * `r length(big_c)` samples with high differences from the mean, with a threshold ( M > 2 or M < -2). Their MA plots have the regression line in red.
-* `r length(medium_c)` samples with moderate differences from the mean, which we define as ( M <= 2 and M >= 1 or M >=-2 and M <= -1). Their regression line is purple.
+* `r length(medium_c)` samples with moderate differences from the mean, which we define as ( M <= 2 and M >= 1 or M >=-2 and M <= -1). Their regression line is brown.
 * `r length(small_c)` samples with moderate differences from the mean as they are (M < 1 or M > -1). Their regression line is green.
 
 We observe that the appearance of samples that differ from the mean can be problematic. If during downstream analysis we observe unexpected results, those samples should be removed together with their normal pairs. We can obtain their names with the following code:
@@ -275,7 +275,7 @@ for (i in 1:ncol(setmp)) {
   smoothScatter(A, M, main=samplename,ylim = c(-5,5), las=1)
   abline(h=0, col="blue", lwd=2)
   lo <- lowess(M ~ A)
-  lines(lo$x, lo$y, col= if(any(lo$y > 2) || any(lo$y < -2)){"red"} else if (any(lo$y <= 2 & lo$y >= 1) || any(lo$y >= -2 & lo$y <= -1)){"purple"} else if(any(lo$y < 1) || any(lo$y > -1)){"green"}, lwd=2)
+  lines(lo$x, lo$y, col= if(any(lo$y > 2) || any(lo$y < -2)){"red"} else if (any(lo$y <= 2 & lo$y >= 1) || any(lo$y >= -2 & lo$y <= -1)){"chocolate1"} else if(any(lo$y < 1) || any(lo$y > -1)){"green"}, lwd=2)
 
 if(any(lo$y > 2) || any(lo$y < -2)){ big_n <- append(big_n,samplename)} else if (any(lo$y <= 2 & lo$y >= 1) || any(lo$y >= -2 & lo$y <= -1)){ medium_n <- append(medium_n,samplename)} else if(any(lo$y < 1) || any(lo$y > -1)){small_n <- append(small_n,samplename)}
 }
@@ -284,7 +284,7 @@ if(any(lo$y > 2) || any(lo$y < -2)){ big_n <- append(big_n,samplename)} else if 
 In this case, we observed:
 
 * `r length(big_n)` samples with high differences from the mean, with a threshold ( M > 2 or M < -2). Their MA plots have the regression line in red.
-* `r length(medium_n)` samples with moderate differences from the mean, which we define as ( M <= 2 and M >= 1 or M >=-2 and M <= -1). Their regression line is purple.
+* `r length(medium_n)` samples with moderate differences from the mean, which we define as ( M <= 2 and M >= 1 or M >=-2 and M <= -1). Their regression line is brown.
 * `r length(small_n)` samples with moderate differences from the mean as they are (M < 1 or M > -1). Their regression line is green.
 
 In conclusion, we do not observe either important expression-level dependent biases among the normal samples.
