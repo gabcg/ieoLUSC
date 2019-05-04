@@ -275,7 +275,7 @@ small_n <- character()
 for (i in 1:ncol(setmp)) {
   A <- rowMeans(assays(setmp)$logCPM)
   M <- assays(setmp)$logCPM[, i] - A
-  samplename <- substr(as.character(setmp$bcr_patient_barcode[i]), 1, 12)
+  samplename <- substr(as.character(colnames(setmp[,i])), 1, 12)
   smoothScatter(A, M, main=samplename,ylim = c(-5,5), las=1)
   abline(h=0, col="blue", lwd=2)
   lo <- lowess(M ~ A)
