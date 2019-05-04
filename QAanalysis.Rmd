@@ -159,6 +159,7 @@ multidensity(as.list(as.data.frame(assays(se[, se$type == "tumor"])$logCPM)),
 multidensity(as.list(as.data.frame(assays(se[, se$type == "normal"])$logCPM)),
                           xlab="log 2 CPM", legend=NULL, main="Normal samples", las=1)
 ```
+
 In both graphs, we see some genes that deviate a little from the rest. These could be potential outliers and we have noted them for later analysis.
 
 ## Distribution of expression levels among genes
@@ -242,21 +243,23 @@ for (i in 1:ncol(setmp)) {
   lo <- lowess(M ~ A)
   lines(lo$x, lo$y, col= if(any(lo$y > 2) || any(lo$y < -2)){"red"} else if (any(lo$y <= 2 & lo$y >= 1) || any(lo$y >= -2 & lo$y <= -1)){"purple"} else if(any(lo$y < 1) || any(lo$y > -1)){"green"}, lwd=2)
 
-if(any(lo$y > 2) || any(lo$y < -2)){ big_c_c <- append(big_c,samplename)} else if (any(lo$y <= 2 & lo$y >= 1) || any(lo$y >= -2 & lo$y <= -1)){ medium_c <- append(medium_c,samplename)} else if(any(lo$y < 1) || any(lo$y > -1)){small_c <- append(small_c,samplename)}
+if(any(lo$y > 2) || any(lo$y < -2)){ big_c <- append(big_c,samplename)} else if (any(lo$y <= 2 & lo$y >= 1) || any(lo$y >= -2 & lo$y <= -1)){ medium_c <- append(medium_c,samplename)} else if(any(lo$y < 1) || any(lo$y > -1)){small_c <- append(small_c,samplename)}
 }
 ```
 
-In the MA-plots of the tumorous samples, we found `r length(big_c) ` samples with some expresion very different of the mean ( M > 2 or M < -2), with the regresion line in red. `r length(medium_c)` samples with some expresion moderatly different from the mean ( M <= 2 and M >= 1 or M >=-2 and M <= -1), with the regresion line in purple. And finally `r length(small_c)` samples that have an expresion-level without any indices of dependent biases (M < 1 or M > -1), with the regresion line in green.
+In the MA-plots of the tumor samples, we observed the following:
+
+* `r length(big_c)` samples with high differences from the mean, with a threshold ( M > 2 or M < -2). Their MA plots have the regression line in red.
+* `r length(medium_c)` samples with moderate differences from the mean, which we define as ( M <= 2 and M >= 1 or M >=-2 and M <= -1). Their regression line is purple.
+* `r length(small_c)` samples with moderate differences from the mean as they are (M < 1 or M > -1). Their regression line is green.
+
+We observe that the appearance of samples that differ from the mean can be problematic. If during downstream analysis we observe unexpected results, those samples should be removed together with their normal pairs. We can obtain their names with the following code:
 
 ```{r}
 big_c
-
-medium_c
-
-small_c
 ```
-We do not observe samples with major expression-level dependent biases. Let's
-look now to the normal samples in Figure \@ref(fig:maPlotsNormal).
+
+Next, we look now to the normal samples in Figure \@ref(fig:maPlotsNormal).
 
 ```{r maPlotsNormal, fig.height=18, fig.width=6, dpi=100, echo=FALSE, fig.cap="MA-plots of the normal samples."}
 par(mfrow=c(9, 3), mar=c(4, 5, 3, 1))
@@ -278,21 +281,17 @@ if(any(lo$y > 2) || any(lo$y < -2)){ big_n <- append(big_n,samplename)} else if 
 }
 ```
 
-In the MA-plots of the normal samples, we found `r length(big_n) ` samples with some expresion very different of the mean ( M > 2 or M < -2), with the regresion line in red. `r length(medium_n)` samples with some expresion moderatly different from the mean ( M <= 2 and M >= 1 or M >=-2 and M <= -1), with the regresion line in purple. And finally `r length(small_n)` samples that have an expresion-level without any indices of dependent biases (M < 1 or M > -1), with the regresion line in green.
+In this case, we observed:
 
-```{r}
-big_n
+* `r length(big_n)` samples with high differences from the mean, with a threshold ( M > 2 or M < -2). Their MA plots have the regression line in red.
+* `r length(medium_n)` samples with moderate differences from the mean, which we define as ( M <= 2 and M >= 1 or M >=-2 and M <= -1). Their regression line is purple.
+* `r length(small_n)` samples with moderate differences from the mean as they are (M < 1 or M > -1). Their regression line is green.
 
-medium_n
-
-small_n
-```
-We do not observe either important expression-level dependent biases among the normal samples.
+In conclusion, we do not observe either important expression-level dependent biases among the normal samples.
 
 ## Batch identification
 
-Batch effects are sub-groups of measurements that have a qualitatively different behavior across conditions and are unrelated to the variables in the study. It is important to determine if batch effects are present to know if any confounding variables are affecting the data. We will search now for potential surrogate of batch effect indicators within normal and tumor samples. Given that each sample names corresponds to a TCGA barcode (see https://wiki.nci.nih.gov/display/TCGA/TCGA+barcode),
-following the strategy described in http://bioinformatics.mdanderson.org/main/TCGABatchEffects:Overview
+Batch effects are sub-groups of measurements that have a qualitatively different behavior across conditions and are unrelated to the variables in the study. It is important to determine if batch effects are present to know if any confounding variables are affecting the data. We will search now for potential surrogate of batch effect indicators within normal and tumor samples. Given that each sample names corresponds to a TCGA barcode (see https://wiki.nci.nih.gov/display/TCGA/TCGA+barcode), following the strategy described in http://bioinformatics.mdanderson.org/main/TCGABatchEffects:Overview
 we are going to derive different elements of the TCGA barcode and examine their distribution
 across samples.
 
@@ -323,12 +322,10 @@ colnames(se.filt)[samplevial == "01B"]
 ```
 
   * Samples were collected evenly across different tissue source sites (TSS).
-  * Samples were sequenced within the different plates, which could lead to a batch effect.
-  * Samples of normal cells have two different portion of analyte, while the tumor samples have five different portions.
-
-We are going to use the portion of analyte as surrogate of batch effect indicator. Considering our outcome
-of interest as molecular changes between sample types, tumor vs. normal, we will examine now
-the cross-classification of this outcome with portion of analyste.
+  * Samples were mostly well distributed in different plates.
+  * Samples of normal cells concentrate into two different portion of analyte, while the tumor samples have five different portions.
+  
+With those results, we use the portion of analyte as surrogate of batch effect indicator. Considering our outcome of interest as molecular changes between sample types, tumor vs. normal, we will examine now the cross-classification of this outcome with portion of analyte.
 
 ```{r}
 table(data.frame(TYPE=se.filt$type, PORTIONANALYTE=portionanalyte))
@@ -336,18 +333,39 @@ table(data.frame(TYPE=se.filt$type, PORTIONANALYTE=portionanalyte))
 
 As we can see here, the majority of normal samples (48) come from the "01R"" analyte and 3 come from the "11R" analyte. However, the tumor samples span across five different analytes. This could potentially lead to a batch effect.
 
-We examine now how samples group together by hierarchical clustering and multidimensional
-scaling, annotating the outcome of interest and the surrogate of batch indicator, or portion of analyte in our case. We calculate again log CPM values with a higher prior count to moderate extreme fold-changes produced by low counts. The resulting dendrogram is shown in Figure \@ref(fig:sampleClustering).
+In order to examine how the samples group together, we use two approaches: hierarchical clustering and multidimensional scaling, annotating the outcome of interest and the surrogate of batch indicator, or portion of analyte in our case.
+
+We perform this under a subset of our samples, as we wish to have a matrix without zeros. We remove samples belonging to portions 21R, 31R and 41R; and as the experiment is paired, also their pairs.
+
+```{r}
+por1 <- as.vector(substr(colnames(se.filt)[portionanalyte == "41R"], 9, 12))
+por2 <- as.vector(substr(colnames(se.filt)[portionanalyte == "31R"], 9, 12))
+por3 <- as.vector(substr(colnames(se.filt)[portionanalyte == "21R"], 9, 12))
+allpor <- c(por1, por2, por3)
+
+table(is.element(substr(colnames(se.filt), 9, 12), allpor))
+
+se.batch <- se.filt[ ,!is.element(substr(colnames(se.filt), 9, 12), allpor)]
+dge.batch <- DGEList(counts=assays(se.batch)$counts, genes=mcols(se.batch))
+
+new.portionanalyte <- substr(colnames(se.batch), 18, 20)
+table(data.frame(TYPE=se.batch$type, PORTIONANALYTE=new.portionanalyte))
+dim(dge.batch)
+```
+
+We see that we are able to remove 24 samples, which correspond to the 12 in the portions we want to remove and their pairs.
+
+We calculate again log CPM values with a higher prior count to moderate extreme fold-changes produced by low counts. The resulting dendrogram is shown in Figure \@ref(fig:sampleClustering).
 
 ```{r sampleClustering, fig.height=7, fig.width=14, dpi=100, echo=TRUE, fig.cap="Figure S6: Hierarchical clustering of the samples."}
-logCPM <- cpm(dge.filt, log=TRUE, prior.count=3)
+logCPM <- cpm(dge.batch, log=TRUE, prior.count=3)
 d <- as.dist(1-cor(logCPM, method="spearman"))
 sampleClustering <- hclust(d)
-batch <- as.integer(factor(portionanalyte))
+batch <- as.integer(factor(new.portionanalyte))
 sampleDendrogram <- as.dendrogram(sampleClustering, hang=0.1)
-names(batch) <- colnames(se.filt)
-outcome <- paste(substr(colnames(se.filt), 9, 12), as.character(se.filt$type), sep="-")
-names(outcome) <- colnames(se.filt)
+names(batch) <- colnames(se.batch)
+outcome <- paste(substr(colnames(se.batch), 9, 12), as.character(se.batch$type), sep="-")
+names(outcome) <- colnames(se.batch)
 sampleDendrogram <- dendrapply(sampleDendrogram,
                                function(x, batch, labels) {
                                  if (is.leaf(x)) {
@@ -357,10 +375,12 @@ sampleDendrogram <- dendrapply(sampleDendrogram,
                                  x
                                }, batch, outcome)
 plot(sampleDendrogram, main="Hierarchical clustering of samples")
-legend("topright", paste("Batch", sort(unique(batch)), levels(factor(portionanalyte))), fill=sort(unique(batch)))
+legend("topright", paste("Batch", sort(unique(batch)), levels(factor(new.portionanalyte))), fill=sort(unique(batch)))
 ```
 
-We can observe that samples cluster primarily by sample type, tumor or normal. The portion of analyte seems to have a stronger effect among the normal samples, while it distributes better among the tumor samples. We may consider discarding samples leading to an unbalanced distribution of the outcome across batches.
+We can observe that samples cluster primarily by sample type, tumor or normal. We observe that the different portions are present in both clusters, so we don't consider that it is inducing batch effect.
+
+We also see that one of the tumor samples, `8623`, is present in the normal sample. This one also had a strong deviation in the MA plot, so we might consider discarding it.
 
 In Figure \@ref(fig:mdsPlot) we show the corresponding MDS plot. Here we see more clearly that the first source of variation separates tumor from normal samples, and we don't see any sample that is separated from any cluster.
 
@@ -372,8 +392,8 @@ these two samples and doing the MDS plot again to have a closer look to the diff
 of the samples and their relationship with TSS.-->
 
 ```{r mdsPlot, fig.height=7, fig.width=14, dpi=100, echo=TRUE, fig.cap="Figure S7: Multidimensional scaling plot of the samples."}
-plotMDS(dge.filt, labels=outcome, col=batch)
-legend("bottomleft", paste("Batch", sort(unique(batch)), levels(factor(portionanalyte))),
+plotMDS(dge.batch, labels=outcome, col=batch)
+legend("bottomleft", paste("Batch", sort(unique(batch)), levels(factor(new.portionanalyte))),
        fill=sort(unique(batch)), inset=0.05)
 ```
 

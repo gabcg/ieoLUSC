@@ -10,29 +10,10 @@ knitr::opts_chunk$set(echo = TRUE)
 ```
 
 
-```{r}
-por1 <- as.vector(substr(colnames(se.filt)[portionanalyte == "41R"], 9, 12))
-por2 <- as.vector(substr(colnames(se.filt)[portionanalyte == "31R"], 9, 12))
-por3 <- as.vector(substr(colnames(se.filt)[portionanalyte == "21R"], 9, 12))
 
-# Concatenate all in one vector
-allpor <- c(por, por2, por3)
-
-# Then we check how many there are. The result should be 24
-table(is.element(substr(colnames(se.filt), 9, 12), allpor))
-
-# Then we subset. Instead of is.element, we want the opposite, which is !is.element. The result should be 78 (102-24)
-
-se.batch <- se.filt[ ,!is.element(substr(colnames(se.filt), 9, 12), allpor)]
-dge.batch <- DGEList(counts=assays(se.batch)$counts, genes=mcols(se.batch))
-
-dim(se.batch)
-dim(dge.batch)
-```
 
 ```{r}
-portionanalyte <- substr(colnames(se.batch), 18, 20)
-table(data.frame(TYPE=se.batch$type, PORTIONANALYTE=portionanalyte))
+
 ```
 
 
@@ -62,4 +43,26 @@ legend("topright", paste("Batch", sort(unique(batch)), levels(factor(portionanal
 plotMDS(dge.batch, labels=outcome, col=batch)
 legend("bottomleft", paste("Batch", sort(unique(batch)), levels(factor(portionanalyte))),
        fill=sort(unique(batch)), inset=0.05)
+```
+
+
+```{r sampleClustering, fig.height=7, fig.width=14, dpi=100, echo=TRUE, fig.cap="Figure S6: Hierarchical clustering of the samples."}
+logCPM <- cpm(dge.filt, log=TRUE, prior.count=3)
+d <- as.dist(1-cor(logCPM, method="spearman"))
+sampleClustering <- hclust(d)
+batch <- as.integer(factor(portionanalyte))
+sampleDendrogram <- as.dendrogram(sampleClustering, hang=0.1)
+names(batch) <- colnames(se.filt)
+outcome <- paste(substr(colnames(se.filt), 9, 12), as.character(se.filt$type), sep="-")
+names(outcome) <- colnames(se.filt)
+sampleDendrogram <- dendrapply(sampleDendrogram,
+                               function(x, batch, labels) {
+                                 if (is.leaf(x)) {
+                                   attr(x, "nodePar") <- list(lab.col=as.vector(batch[attr(x, "label")]))
+                                   attr(x, "label") <- as.vector(labels[attr(x, "label")])
+                                 }
+                                 x
+                               }, batch, outcome)
+plot(sampleDendrogram, main="Hierarchical clustering of samples")
+legend("topright", paste("Batch", sort(unique(batch)), levels(factor(portionanalyte))), fill=sort(unique(batch)))
 ```
