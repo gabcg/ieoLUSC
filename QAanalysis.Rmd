@@ -380,7 +380,7 @@ legend("topright", paste("Batch", sort(unique(batch)), levels(factor(new.portion
 
 We can observe that samples cluster primarily by sample type, tumor or normal. We observe that the different portions are present in both clusters, so we don't consider that it is inducing batch effect.
 
-We also see that one of the tumor samples, `8623`, is present in the normal sample. This one also had a strong deviation in the MA plot, so we might consider discarding it.
+We also see that one of the tumor samples, `8623-tumor`, is present in the normal samples cluster. This one also had a strong deviation in the MA plot, so we might consider discarding it.
 
 In Figure \@ref(fig:mdsPlot) we show the corresponding MDS plot. Here we see more clearly that the first source of variation separates tumor from normal samples, and we don't see any sample that is separated from any cluster.
 
@@ -397,6 +397,30 @@ legend("bottomleft", paste("Batch", sort(unique(batch)), levels(factor(new.porti
        fill=sort(unique(batch)), inset=0.05)
 ```
 
+Finally, under the consideration that there is no batch effect, the 24 samples that were removed in order to make the dendogram and the MDS plot will remain for further analysis. We decide to generate the dendogram in \@ref(fig:allSampleClustering) again in order to see if any other sample appears in its opposite cluster, apart from `8623-tumor`.
+
+```{r allSampleClustering, fig.height=7, fig.width=14, dpi=100, echo=TRUE, fig.cap="Figure S6: Hierarchical clustering of the samples."}
+logCPM <- cpm(dge.filt, log=TRUE, prior.count=3)
+d <- as.dist(1-cor(logCPM, method="spearman"))
+sampleClustering <- hclust(d)
+batch <- as.integer(factor(portionanalyte))
+sampleDendrogram <- as.dendrogram(sampleClustering, hang=0.1)
+names(batch) <- colnames(se.filt)
+outcome <- paste(substr(colnames(se.filt), 9, 12), as.character(se.filt$type), sep="-")
+names(outcome) <- colnames(se.filt)
+sampleDendrogram <- dendrapply(sampleDendrogram,
+                               function(x, batch, labels) {
+                                 if (is.leaf(x)) {
+                                   attr(x, "nodePar") <- list(lab.col=as.vector(batch[attr(x, "label")]))
+                                   attr(x, "label") <- as.vector(labels[attr(x, "label")])
+                                 }
+                                 x
+                               }, batch, outcome)
+plot(sampleDendrogram, main="Hierarchical clustering of samples")
+legend("topright", paste("Batch", sort(unique(batch)), levels(factor(new.portionanalyte))), fill=sort(unique(batch)))
+```
+
+We observe that only the `8623-tumor` sample doesn't cluster with the rest of the tumor samples.
 
 ## Session information
 
