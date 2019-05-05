@@ -22,7 +22,7 @@ bibliography: bibliography.bib
 
 # Introduction
 
-Lung cancer is the most lethal one in comparison with other cancer types, in both genders. Is the responsibility of the 28\% in the all cancer mortality. The expects for the ones who have this kind of cancer diagnosed are very poor, Usually is diagnosed in an advanced phase and the patients only have a 16\% of survival rate after 5 years of their diagnosis.
+Lung cancer is the most lethal one in comparison with other cancer types, in both genders. Is the responsible of the 28\% in the all cancer mortality. The expects for the ones who have this kind of cancer diagnosed are very poor, Usually is diagnosed in an advanced phase and the patients only have a 16\% of survival rate after 5 years of their diagnosis.
 
 The Cancer Genome Atlas (TCGA) has comprehensively profiled this type of cancer in a patient cohort. Here we analyze the expression profiles of those
 patients, using a pipeline based on the R/Bioconductor software package `r Biocpkg("Rsubread")`.
@@ -31,9 +31,6 @@ This document is written in [R markdown](https://rmarkdown.rstudio.com) and
 should be processed using R and you need to install the packages
 `r CRANpkg("knitr")` and `r CRANpkg("markdown")`. Moreover, it using the official style for Bioconductor vignettes facilitated by the Bioconductor package `r Biocpkg("BiocStyle")`. 
 
-   ```
-   $ make
-   ```
 ```{r echo=FALSE, results='asis'}
 cat(readLines("QAanalysis.knit.md"), sep="\n")
 ```
@@ -47,3 +44,7 @@ cat(readLines("FEanalysis.knit.md"), sep="\n")
 ```
 
 # References
+
+```{r echo=FALSE, results='asis'}
+cat(readLines("bibliography.bib"), sep="\n")
+```

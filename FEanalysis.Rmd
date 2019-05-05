@@ -37,7 +37,7 @@ dge.filt <- readRDS(file.path("results", "dge.paired.filt.rds"))
 
 # Functional analysis
 
-Here we do the functional analysis. 
+Here we will perform the functional analysis in the second part of the project. 
 
 ## Session information
 

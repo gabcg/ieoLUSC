@@ -40,7 +40,8 @@ dge.filt <- readRDS(file.path("results", "dge.paired.filt.rds"))
 We perform a simple examination of expression changes and their associated p-values
 using the R/Bioconductor package [sva](http://bioconductor.org/packages/sva).
 
-In order to use the method, a matrix of the model, including adjustment variables, and a null model which only includes the adjustment variables have to be created. In our case there are no factors to adjust, so we give ~1 as the intercept term in the model.
+In order to use the method, a matrix of the model, including adjustment variables, and a null model which only includes the adjustment variables have to be created.
+In our case there are no factors to adjust, so we give ~1 as the intercept term in the model.
 
 ```{r, message=FALSE}
 library(sva)
