@@ -121,7 +121,7 @@ you should use the notation shown above as \@ref(fig:xxxx) with xxxx being the l
 in the code chunk that also gives the filename of the figure. This name must be unique
 --->
 
-```{r libsizes, echo=FALSE, out.width="600px", fig.cap="Library sizes in increasing order."}
+```{r libsizes, echo=FALSE, out.width="800px", fig.cap="Library sizes in increasing order."}
 ord <- order(dge$sample$lib.size/1e6)
 barplot(dge$sample$lib.size[ord]/1e6, las=1, ylab="Millions of reads",
                 xlab="Samples", col=c("blue", "red")[(se$type[ord] == "tumor") + 1])
@@ -166,7 +166,7 @@ In both graphs, we see some genes that deviate a little from the rest. These cou
 
 Next, we wanted to look at the distribution of expression levels across genes. To do this, we calculate the average expression per gene through all the samples. Figure \@ref(fig:exprdist) shows the distribution of those values.
 
-```{r exprdist, echo=FALSE, out.width="400px", fig.cap="Distribution of average expression level per gene."}
+```{r exprdist, echo=FALSE, out.width="800px", fig.cap="Distribution of average expression level per gene."}
 avgexp <- rowMeans(assays(se)$logCPM)
 hist(avgexp, xlab="log2 CPM", main="", las=1)
 abline(v=1, col="red", lwd=2)
@@ -228,7 +228,7 @@ control the relative image size in *inches*. The final image size results from
 --->
 
 ```{r maPlotsTumor, fig.height=36, fig.width=6, dpi=100, echo=FALSE, fig.cap="MA-plots of the tumor samples."}
-par(mfrow=c(22, 3), mar=c(4, 5, 3, 1))
+par(mfrow=c(17, 3), mar=c(4, 5, 3, 1))
 setmp <- se.filt[, se.filt$type == "tumor"]
 dgetmp <- dge.filt[, se.filt$type == "tumor"]
 big_c <- character()
@@ -261,8 +261,8 @@ big_c
 
 Next, we look now to the normal samples in Figure \@ref(fig:maPlotsNormal).
 
-```{r maPlotsNormal, fig.height=18, fig.width=6, dpi=100, echo=FALSE, fig.cap="MA-plots of the normal samples."}
-par(mfrow=c(9, 3), mar=c(4, 5, 3, 1))
+```{r maPlotsNormal, fig.height=36, fig.width=6, dpi=100, echo=FALSE, fig.cap="MA-plots of the normal samples."}
+par(mfrow=c(18, 3), mar=c(4, 5, 3, 1))
 setmp <- se.filt[, se.filt$type == "normal"]
 dgetmp <- dge.filt[, se$type == "normal"]
 big_n <- character()
@@ -276,7 +276,6 @@ for (i in 1:ncol(setmp)) {
   abline(h=0, col="blue", lwd=2)
   lo <- lowess(M ~ A)
   lines(lo$x, lo$y, col= if(any(lo$y > 2) || any(lo$y < -2)){"red"} else if (any(lo$y <= 2 & lo$y >= 1) || any(lo$y >= -2 & lo$y <= -1)){"chocolate1"} else if(any(lo$y < 1) || any(lo$y > -1)){"green"}, lwd=2)
-
 if(any(lo$y > 2) || any(lo$y < -2)){ big_n <- append(big_n,samplename)} else if (any(lo$y <= 2 & lo$y >= 1) || any(lo$y >= -2 & lo$y <= -1)){ medium_n <- append(medium_n,samplename)} else if(any(lo$y < 1) || any(lo$y > -1)){small_n <- append(small_n,samplename)}
 }
 ```
@@ -357,7 +356,7 @@ We see that we are able to remove 24 samples, which correspond to the 12 in the 
 
 We calculate again log CPM values with a higher prior count to moderate extreme fold-changes produced by low counts. The resulting dendrogram is shown in Figure \@ref(fig:sampleClustering).
 
-```{r sampleClustering, fig.height=7, fig.width=14, dpi=100, echo=TRUE, fig.cap="Figure S6: Hierarchical clustering of the samples."}
+```{r sampleClustering, fig.height=7, fig.width=14, dpi=100, echo=TRUE, fig.cap="Hierarchical clustering of the samples."}
 logCPM <- cpm(dge.batch, log=TRUE, prior.count=3)
 d <- as.dist(1-cor(logCPM, method="spearman"))
 sampleClustering <- hclust(d)
@@ -391,15 +390,15 @@ reveals a slight dependence of expression changes on average expression. We may 
 these two samples and doing the MDS plot again to have a closer look to the differences among the rest
 of the samples and their relationship with TSS.-->
 
-```{r mdsPlot, fig.height=7, fig.width=14, dpi=100, echo=TRUE, fig.cap="Figure S7: Multidimensional scaling plot of the samples."}
+```{r mdsPlot, fig.height=7, fig.width=14, dpi=100, echo=TRUE, fig.cap="Multidimensional scaling plot of the samples."}
 plotMDS(dge.batch, labels=outcome, col=batch)
 legend("bottomleft", paste("Batch", sort(unique(batch)), levels(factor(new.portionanalyte))),
        fill=sort(unique(batch)), inset=0.05)
 ```
 
-Finally, under the consideration that there is no batch effect, the 24 samples that were removed in order to make the dendogram and the MDS plot will remain for further analysis. We decide to generate the dendogram in \@ref(fig:allSampleClustering) again in order to see if any other sample appears in its opposite cluster, apart from `8623-tumor`.
+Finally, under the consideration that there is no batch effect, the 24 samples that were removed in order to make the dendogram and the MDS plot will remain for further analysis. We decide to generate the dendogram in Figure \@ref(fig:allSampleClustering) again in order to see if any other sample appears in its opposite cluster, apart from `8623-tumor`.
 
-```{r allSampleClustering, fig.height=7, fig.width=14, dpi=100, echo=TRUE, fig.cap="Figure S6: Hierarchical clustering of the samples."}
+```{r allSampleClustering, fig.height=7, fig.width=14, dpi=100, echo=TRUE, fig.cap="Hierarchical clustering of the samples."}
 logCPM <- cpm(dge.filt, log=TRUE, prior.count=3)
 d <- as.dist(1-cor(logCPM, method="spearman"))
 sampleClustering <- hclust(d)
