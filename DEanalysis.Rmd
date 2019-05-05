@@ -46,7 +46,7 @@ In order to use the method, a matrix of the model, including adjustment variable
 library(sva)
 mod <- model.matrix(~type + 1, data = colData(se.filt))
 mod0 <- model.matrix(~1, data = colData(se.filt))
-sv <- sva(logCPM, mod, mod0)
+sv <- sva(assays(se.filt)$logCPM, mod, mod0)
 pv <- f.pvalue(assays(se.filt)$logCPM, mod, mod0)
 sum(p.adjust(pv, method="fdr") < 0.01)
 ```
