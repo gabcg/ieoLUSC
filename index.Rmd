@@ -8,9 +8,9 @@ author:
 - name: Aleix Matabacas
   affiliation: *id
   email: aleix.matabacas01@upf.edu
-- name: Austin Mc
+- name: Austin McKitric
   affiliation: *id
-  email: austin.mc01@upf.edu
+  email: austin.mckitric01@upf.edu
 date: "`r format(Sys.time(), '%B %e, %Y')`"
 output: 
   BiocStyle::html_document:
