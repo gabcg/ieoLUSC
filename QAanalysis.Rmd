@@ -35,9 +35,7 @@ opts_chunk$set(cache=TRUE,
 
 ## Data import
 
-Lung cancer, specifically lung squamous cell carcinoma, was assessed and analyzed in this experiment. In this dataset, a total of xxx tumors were submitted to the Cancer Genome Atlas Program (TCGA).
-
-We start importing the raw table of counts. From this, we see that 20115 genes from a total of 553 samples are in this data.
+Lung cancer, specifically lung squamous cell carcinoma, was assessed and analyzed in this experiment. We start importing the raw table of counts.
 
 <!--
 The option 'message=FALSE' avoid dumping R messages such as "Loading required package: methods"
@@ -49,10 +47,13 @@ library(SummarizedExperiment)
 
 se.unpaired <- readRDS(file.path("rawCounts", "seLUSC.rds"))
 se.unpaired
+
+table(se.unpaired$type)
 ```
 
-Next, we explored the column (phenotypic) data, which in this case corresponds to clinical
-variables, and their corresponding metadata. For example, the column "type" consists of tumor and normal labels. Other information such as gender, tumor stage, and smoking status are also shown.
+From this, we see that 20115 genes from a total of 553 samples are in this data. We can also observe that this dataset contains `r sum(se.unpaired$type == 'tumor', na.rm = TRUE)` tumor samples and `r sum(se.unpaired$type == 'normal', na.rm = TRUE)` normal samples, which matches the information of the dataset from The Cancer Genome Atlas (TCGA) program.
+
+Next, we explored the column (phenotypic) data, which in this case corresponds to clinical variables, and their corresponding metadata. For example, the column "type" consists of tumor and normal labels. Other information such as gender, tumor stage, and smoking status are also shown.
 
 In any case, we can access all the possible labels with the last line of code, which returns two columns of information about the clinical variables. One called `labelDescription` contains a succint description of the variable, often
 not more self-explanatory than the variable name itself, and the other called
@@ -227,8 +228,8 @@ control the relative image size in *inches*. The final image size results from
 'out.width' and 'out.height'. More information at http://yihui.name/knitr/options
 --->
 
-```{r maPlotsTumor, fig.height=36, fig.width=6, dpi=100, echo=FALSE, fig.cap="MA-plots of the tumor samples."}
-par(mfrow=c(17, 3), mar=c(4, 5, 3, 1))
+```{r maPlotsTumor, fig.height=36, fig.width=14, dpi=120, echo=FALSE, fig.cap="MA-plots of the tumor samples."}
+par(mfrow=c(13, 4), mar=c(4, 5, 3, 1))
 setmp <- se.filt[, se.filt$type == "tumor"]
 dgetmp <- dge.filt[, se.filt$type == "tumor"]
 big_c <- character()
@@ -261,8 +262,8 @@ big_c
 
 Next, we look now to the normal samples in Figure \@ref(fig:maPlotsNormal).
 
-```{r maPlotsNormal, fig.height=36, fig.width=6, dpi=100, echo=FALSE, fig.cap="MA-plots of the normal samples."}
-par(mfrow=c(18, 3), mar=c(4, 5, 3, 1))
+```{r maPlotsNormal, fig.height=36, fig.width=14, dpi=120, echo=FALSE, fig.cap="MA-plots of the normal samples."}
+par(mfrow=c(13, 4), mar=c(4, 5, 3, 1))
 setmp <- se.filt[, se.filt$type == "normal"]
 dgetmp <- dge.filt[, se$type == "normal"]
 big_n <- character()
