@@ -45,3 +45,5 @@ cat(readLines("DEanalysis.knit.md"), sep="\n")
 ```{r echo=FALSE, results='asis'}
 cat(readLines("FEanalysis.knit.md"), sep="\n")
 ```
+
+# References

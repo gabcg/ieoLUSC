@@ -23,19 +23,21 @@ opts_chunk$set(cache=TRUE,
                fig.align="center",
                comment="")
 
-se <- readRDS(file.path("rawCounts", "seKICH.rds"))
-dge <- readRDS(file.path("results", "dge.rds"))
-se.filt.unnorm <- readRDS(file.path("results", "se.filt.unnorm.rds"))
-dge.filt.unnorm <- readRDS(file.path("results", "dge.filt.unnorm.rds"))
-se.filt <- readRDS(file.path("results", "se.filt.rds"))
-dge.filt <- readRDS(file.path("results", "dge.filt.rds"))
+se.unpaired <- readRDS(file.path("rawCounts", "seLUSC.rds"))
+dg.unpaired <- readRDS(file.path("results", "dge.rds"))
 
+se <- readRDS(file.path("results", "se.paired.rds"))
+dge <- readRDS(file.path("results", "dge.paired.rds"))
 
+se.filt.unnorm <- readRDS(file.path("results", "se.paired.filt.unnorm.rds"))
+dge.filt.unnorm <- readRDS(file.path("results", "dge.paired.filt.unnorm.rds"))
+se.filt <- readRDS(file.path("results", "se.paired.filt.rds"))
+dge.filt <- readRDS(file.path("results", "dge.paired.filt.rds"))
 ```
 
 # Functional analysis
 
-Here we do the functional analysis.
+Here we do the functional analysis. 
 
 ## Session information
 
