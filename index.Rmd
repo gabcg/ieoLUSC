@@ -24,8 +24,7 @@ bibliography: bibliography.bib
 
 Among all cancer types, lung cancer is the most lethal among both males and females. It is responsible for 28% of cancer-related mortality. The life expectation for those who have lung cancer are very poor. It is usually diagnosed in an advanced phase, and the patients only have a 16% survival rate after 5 years of their diagnosis.
 
-The Cancer Genome Atlas (TCGA) has comprehensively profiled this type of cancer in a patient cohort. Here, we analyze the expression profiles of those
-patients, using a pipeline based on the R/Bioconductor software package `r Biocpkg("Rsubread")`.
+The Cancer Genome Atlas (TCGA) has comprehensively profiled this type of cancer in a patient cohort. Here, we analyze the expression profiles of those patients, using a pipeline based on the R/Bioconductor software package `r Biocpkg("Rsubread")`.
 
 This document is written in [R markdown](https://rmarkdown.rstudio.com) and
 should be processed using R and you need to install the packages
