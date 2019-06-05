@@ -40,17 +40,72 @@ In order to use the method, a matrix of the model, including adjustment variable
 
 ```{r, message=FALSE}
 library(sva)
-mod <- model.matrix(~type + 1, data = colData(se.filt))
+
+patientid <- substr(colnames(se.filt), 9, 12)
+samplevial <- substr(colnames(se.filt), 14, 16)
+
+mod <- model.matrix(~type + patientid, data = colData(se.filt))
 mod0 <- model.matrix(~1, data = colData(se.filt))
+
+
 sv <- sva(assays(se.filt)$logCPM, mod, mod0)
-pv <- f.pvalue(assays(se.filt)$logCPM, mod, mod0)
-sum(p.adjust(pv, method="fdr") < 0.01)
+
+#pv <- f.pvalue(assays(se.filt)$logCPM, mod, mod0)
+#sum(p.adjust(pv, method="fdr") < 0.01)
+
+# Add surrogates to the model
+
+len <- length(colnames(mod))
+
+mod <- cbind(mod, sv$sv)
+colnames(mod) <- c(colnames(mod)[1:len], paste0("SV", 1:sv$n))
+
+v <- voom(dge.filt, mod, plot=TRUE)
+
+fit <- lmFit(v, mod)
+fit <- eBayes(fit)
 ```
+
+```{r}
+FDRcutoff <- 0.05
+res <- decideTests(fit, p.value = FDRcutoff)
+summary(res)
+```
+
+
+```{r}
+# Get gene info
+genesmd <- data.frame(chr = as.character(seqnames(rowRanges(se.filt))), symbol = rowData(se.filt)[, 1], stringsAsFactors = FALSE)
+
+# And aadd it to...
+fit$genes <- genesmd
+tt <- topTable(fit, coef = 2, n = Inf)
+head(tt)
+```
+
+Examine chromosome distr of genes called DE
+
+```{r}
+sort(table(tt$chr[tt$adj.P.Val < FDRcutoff]), decreasing = TRUE)
+```
+
+
+Graph stuff
+
+```{r}
+par(mfrow = c(1, 2), mar = c(4, 5, 2, 2))
+hist(tt$P.Value, xlab = "Raw P-values", main = "", las = 1)
+qqt(fit$t[, 2], df = fit$df.prior + fit$df.residual, main = "", pch = ".", cex = 3)
+abline(0, 1, lwd = 2)
+```
+
+-----------------------------------------------------------
 
 There are `r sum(p.adjust(pv, method="fdr") < 0.01)` genes changing significantly their expression at FDR < 1%. In Figure \@ref(fig:pdist) below we show the distribution of the resulting p-values. This distribution should be uniform with a peak at low p-values for the truly DE genes, assuming that most genes are not differentially expressed.
 
 ```{r pdist, echo=FALSE, out.width="800px", fig.cap="Distribution of raw p-values for an F-test on every gene between tumor and normal samples."}
 hist(pv, main="", las=1)
+
 ```
 
 The `sva()` function is able to estimate surrogate variables, which have continuous values that can be used to correct and adjust unmeasured and unwanted effects.
