@@ -59,7 +59,6 @@ res <- decideTests(fit, p.value = FDRcutoff)
 summary(res)
 ```
 
-
 ```{r}
 # Get gene info
 genesmd <- data.frame(chr = as.character(seqnames(rowRanges(se.filt))), symbol = rowData(se.filt)[, 1], stringsAsFactors = FALSE)
@@ -138,8 +137,6 @@ fit <- lmFit(v, mod)
 fit <- eBayes(fit)
 tt <- topTable(fit, coef = 2, n = Inf)
 ```
-
-
 
 ```{r}
 Im <- Im[rowSums(Im) >= 5, ]
