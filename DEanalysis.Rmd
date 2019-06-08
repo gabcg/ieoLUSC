@@ -12,20 +12,16 @@ library(knitr)
 library(SummarizedExperiment)
 library(edgeR)
 library(geneplotter)
-
 opts_chunk$set(cache=TRUE,
                cache.path="cache/file2",
                cache.extra=R.version.string,
                autodep=TRUE,
                fig.align="center",
                comment="")
-
 se.unpaired <- readRDS(file.path("rawCounts", "seLUSC.rds"))
 dg.unpaired <- readRDS(file.path("results", "dge.rds"))
-
 se <- readRDS(file.path("results", "se.paired.rds"))
 dge <- readRDS(file.path("results", "dge.paired.rds"))
-
 se.filt.unnorm <- readRDS(file.path("results", "se.paired.filt.unnorm.rds"))
 dge.filt.unnorm <- readRDS(file.path("results", "dge.paired.filt.unnorm.rds"))
 se.filt <- readRDS(file.path("results", "se.paired.filt.rds"))
@@ -40,30 +36,21 @@ In order to use the method, a matrix of the model, including adjustment variable
 
 ```{r, message=FALSE}
 library(sva)
-
 patientid <- substr(colnames(se.filt), 9, 12)
 samplevial <- substr(colnames(se.filt), 14, 16)
-
 mod <- model.matrix(~type + patientid, data = colData(se.filt))
 mod0 <- model.matrix(~1, data = colData(se.filt))
-
-
 sv <- sva(assays(se.filt)$logCPM, mod, mod0)
-
 #pv <- f.pvalue(assays(se.filt)$logCPM, mod, mod0)
 #sum(p.adjust(pv, method="fdr") < 0.01)
-
 # Add surrogates to the model
-
 len <- length(colnames(mod))
-
 mod <- cbind(mod, sv$sv)
 colnames(mod) <- c(colnames(mod)[1:len], paste0("SV", 1:sv$n))
-
 v <- voom(dge.filt, mod, plot=TRUE)
-
 fit <- lmFit(v, mod)
 fit <- eBayes(fit)
+
 ```
 
 ```{r}
@@ -72,26 +59,25 @@ res <- decideTests(fit, p.value = FDRcutoff)
 summary(res)
 ```
 
-
 ```{r}
 # Get gene info
 genesmd <- data.frame(chr = as.character(seqnames(rowRanges(se.filt))), symbol = rowData(se.filt)[, 1], stringsAsFactors = FALSE)
-
 # And aadd it to...
 fit$genes <- genesmd
 tt <- topTable(fit, coef = 2, n = Inf)
-head(tt)
+head(tt, n = 20)
 ```
+All adjusted p-values here are close to 1 meaning that they are not significant. 
 
-Examine chromosome distr of genes called DE
 
+
+#Examine chromosome distr of genes called DE
 ```{r}
 sort(table(tt$chr[tt$adj.P.Val < FDRcutoff]), decreasing = TRUE)
 ```
+No DE genes shown here 
 
-
-Graph stuff
-
+#Graph stuff
 ```{r}
 par(mfrow = c(1, 2), mar = c(4, 5, 2, 2))
 hist(tt$P.Value, xlab = "Raw P-values", main = "", las = 1)
@@ -99,8 +85,153 @@ qqt(fit$t[, 2], df = fit$df.prior + fit$df.residual, main = "", pch = ".", cex =
 abline(0, 1, lwd = 2)
 ```
 
------------------------------------------------------------
+```{r}
+library(GSEABase)
 
+geneUniverse <- rownames(se.filt)
+length(geneUniverse)
+
+c4 <- getGmt("c4.all.v6.2.entrez.gmt")
+c4
+length(c4)
+```
+
+```{r}
+gsc <- GeneSetCollection(c(c4))
+#map identifiers
+gsc <- mapIdentifiers(gsc, AnnoOrEntrezIdentifier(metadata(se.filt)$annotation))
+gsc
+```
+
+```{r}
+Im <- incidence(gsc)
+dim(Im)
+Im[1:2, 1:10]
+Im <- Im[, colnames(Im) %in% rownames(se.filt)]
+dim(Im)
+```
+
+```{r}
+se.filt <- se.filt[colnames(Im), ]
+dim(se.filt)
+dge.filt <- dge.filt[colnames(Im), ]
+dim(dge.filt)
+```
+
+```{r}
+library(limma)
+library(sva)
+patientid <- substr(colnames(se.filt), 9, 12)
+samplevial <- substr(colnames(se.filt), 14, 16)
+mod <- model.matrix(~type + patientid, data = colData(se.filt))
+mod0 <- model.matrix(~1, data = colData(se.filt))
+
+
+sv <- sva(assays(se.filt)$logCPM, mod, mod0)
+#pv <- f.pvalue(assays(se.filt)$logCPM, mod, mod0)
+#sum(p.adjust(pv, method="fdr") < 0.01)
+# Add surrogates to the model
+len <- length(colnames(mod))
+mod <- cbind(mod, sv$sv)
+colnames(mod) <- c(colnames(mod)[1:len], paste0("SV", 1:sv$n))
+v <- voom(dge.filt, mod, plot=TRUE)
+fit <- lmFit(v, mod)
+fit <- eBayes(fit)
+tt <- topTable(fit, coef = 2, n = Inf)
+```
+
+```{r}
+Im <- Im[rowSums(Im) >= 5, ]
+dim(Im)
+
+tGSgenes <- tt[match(colnames(Im), rownames(tt)), "t"]
+length(tGSgenes)
+
+head(tGSgenes)
+
+zS <- sqrt(rowSums(Im)) * (as.vector(Im %*% tGSgenes)/rowSums(Im))
+length(zS)
+
+head(zS)
+
+rnkGS <- sort(abs(zS), decreasing = TRUE)
+head(rnkGS)
+```
+
+```{r}
+pv <- pmin(pnorm(zS), 1 - pnorm(zS))
+pvadj <- p.adjust(pv, method = "fdr")
+DEgs <- names(pvadj)[which(pvadj < 0.01)]
+length(DEgs)
+```
+
+#GSEA DOESNT WORK
+
+#GSVA
+```{r}
+library(GSVA)
+GSexpr <- gsva(assays(se.filt)$logCPM, gsc, min.sz=5, max.sz=300, verbose=FALSE)
+dim(GSexpr)
+```
+```{r}
+mod <- model.matrix(~se.filt$type + patientid, data = colData(se.filt))
+mod0 <- model.matrix(~1, data = colData(se.filt))
+svaobj <- sva(GSexpr, mod, mod0)
+
+modSVs <- cbind(mod, svaobj$sv)
+
+corfit <- duplicateCorrelation(GSexpr, modSVs, block = se.filt$cellline)
+fit <- lmFit(GSexpr, modSVs)
+fit <- eBayes(fit)
+tt <- topTable(fit, coef = 2, n = Inf)
+DEgs <- rownames(tt[tt$adj.P.Val < 0.01, , drop = FALSE])
+length(DEgs)
+```
+
+```{r}
+plot(tt$logFC, -log10(tt$P.Value), xlab="Log2 fold-change", ylab="-log10 P-value", 
+     pch=".", cex=5, col=grey(0.75), cex.axis=1.2, cex.lab=1.5, las=1)
+posx <- tt[tt$adj.P.Val < 0.01, "logFC"] 
+posy <- -log10(tt[tt$adj.P.Val < 0.01, "P.Value"]) 
+points(posx, posy, pch=".", cex=5, col="red")
+
+```
+
+```{r}
+genesmd <- data.frame(chr = as.character(seqnames(rowRanges(se.filt))), symbol = rowData(se.filt)[, 1], stringsAsFactors = FALSE)
+fit$genes <- genesmd
+tt <- topTable(fit, coef = 2, n = Inf)
+head(tt, n = 10)
+```
+
+```{r}
+DEgenes <- rownames(tt)[tt$adj.P.Val < FDRcutoff]
+length(DEgenes)
+saveRDS(DEgenes, file.path("results", "DEgenes.rds"))
+```
+
+```{r}
+library(limma)
+par(mfrow = c(1, 2), mar = c(4, 5, 3, 2))
+volcanoplot(fit, coef = 2, highlight = 7, names = fit$genes$symbol, main = "Model")
+top10 <- order(fit$lods[, 2], decreasing = TRUE)[1:10]
+plotMA(fit, coef = 2, status = rownames(fit$lods) %in% DEgenes, legend = FALSE, 
+    main = "Model 6", hl.pch = 46, hl.cex = 4, bg.pch = 46, bg.cex = 3, las = 1)
+text(fit$Amean[top10], fit$coef[top10, 2], fit$genes$symbol[top10], cex = 0.5, pos = 4)
+```
+
+
+
+
+
+
+
+
+
+
+
+
+-----------------------------------------------------------
 There are `r sum(p.adjust(pv, method="fdr") < 0.01)` genes changing significantly their expression at FDR < 1%. In Figure \@ref(fig:pdist) below we show the distribution of the resulting p-values. This distribution should be uniform with a peak at low p-values for the truly DE genes, assuming that most genes are not differentially expressed.
 
 ```{r pdist, echo=FALSE, out.width="800px", fig.cap="Distribution of raw p-values for an F-test on every gene between tumor and normal samples."}
