@@ -290,6 +290,7 @@ text(fit$Amean[top], fit$coef[top, 2], fit$genes$symbol[top], cex = 0.5, pos = 4
 
 The list of top 10 genes:
 
+
 ```{r}
 fit$genes$symbol[top]
 ```
