@@ -136,7 +136,7 @@ length(DEgs)
 
 ## Gene Set Variation Analysis 
 
-Since the GSEA showed no gene set were differentially expressed, a gene set variation analysis (GSVA) was completed. This differs from the standard GSEA, because a GSVA characterizes the underlying biological pathway activity rather than the behavior of functionally related genes. The goal is to see how the biological pathway activity compares among the two groups. 
+Since the GSEA showed no gene set were differentially expressed, a gene set variation analysis (GSVA) was performed. This differs from the standard GSEA, because a GSVA characterizes the underlying biological pathway activity rather than the behavior of functionally related genes. The goal is to see how the biological pathway activity compares among the two groups. 
 
 In order to do this, a matrix is created with the number of gene sets and an enrichment score that indicates sample-wise gene-level summaries of expression. A key difference here is that the matrix constructed is a gene set by sample matrix without the phenotypic classification studied previously.
 
@@ -145,6 +145,7 @@ library(GSVA)
 GSexpr <- gsva(assays(se.filt)$logCPM, gsc, min.sz=5, max.sz=300, verbose=FALSE)
 dim(GSexpr)
 ```
+
 The enrichment scores are used for gene expression values in the differential analysis prodedure below. A total of 497 gene sets appear to be called differentially expressed at 1% FDR.
 
 ```{r}
@@ -170,7 +171,6 @@ plot(tt$logFC, -log10(tt$P.Value), xlab="Log2 fold-change", ylab="-log10 P-value
 posx <- tt[tt$adj.P.Val < 0.01, "logFC"] 
 posy <- -log10(tt[tt$adj.P.Val < 0.01, "P.Value"]) 
 points(posx, posy, pch=".", cex=5, col="red")
-
 ```
 
 <!--not sure if this next section is right? this is similar to what marta did with doing the DE analysis twice-->
@@ -199,17 +199,14 @@ DEgenes <- rownames(tt)[tt$adj.P.Val < FDRcutoff]
 length(DEgenes)
 saveRDS(DEgenes, file.path("results", "DEgenes.rds"))
 par(mfrow = c(1, 2), mar = c(4, 5, 2, 2))
-
 ```
 
 Here are the top 10
 
 ```{r}
-library(limma)
 par(mfrow = c(1, 2), mar = c(4, 5, 3, 2))
 volcanoplot(fit, coef = 2, highlight = 10, names = fit$genes$symbol, main = "Model", xlim=c(-10, 10))
 top10 <- order(fit$lods[, 2], decreasing = TRUE)[1:10]
-
 ```
 
 ## Gene Ontology analysis
