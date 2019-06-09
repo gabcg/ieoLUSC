@@ -32,11 +32,13 @@ dge.filt <- readRDS(file.path("results", "dge.paired.filt.rds"))
 
 ## Differential expression using limma-voom and SVA
 
-We perform a simple examination of expression changes and their associated p-values using the R/Bioconductor package [sva](http://bioconductor.org/packages/sva).
+A differential expression analysis is performed using the [limma](http://bioconductor.org/packages/release/bioc/html/limma.html) and [sva](http://bioconductor.org/packages/sva.html) R/Bioconductor packages.
 
-In order to use the method, a matrix of the model, including adjustment variables, and a null model which only includes the adjustment variables have to be created. In our case there are no factors to adjust, so we give ~1 as the intercept term in the model. Also, as the design of the analysis is paired (both types of samples come from the same patient), we need to add an identifier of the patient to the model.
+To use this method, two model matrices are generated: a matrix of the model including the outcome of interest and adjustment variables, and a matrix of the null model that only includes adjustment variables. The outcome of interest is the type of sample, and as the analysis is paired (both types of samples come from the same patient) a unique identifier of each patient is included. Finally, as there are not known factors to adjust, an intercept term of 1 is given to the null model.
 
-Even if no known sources of variation were found, we can use SVA to estimate surrogate variables and add them to the model. These variables represent the unknown variation of the data.
+Even if no known sources of variation were found, surrogate variables representing unknown sources of variation can be added to the model. Those can be estimated with the `sva` package, and later be appended to the model.
+
+Finally, `voom` is used to fit the model, and the moderated t-statistics are calculated.
 
 ```{r, message=FALSE}
 library(sva)
@@ -64,11 +66,11 @@ fit <- lmFit(v, mod) # Fit the model with the voom weights
 fit <- eBayes(fit) # Calculate moderated t-statistics
 ```
 
-`sva` was able to estimate `r sv$n.sv` surrogate variables. Regarding the mean-variance plot obtained with `voom`, it shows the variance in the y axis and the mean of expression in the x axis for each gene, represented as a black dot. The red curve is fitted to the dots, and shows the trends in the data: increases in expression levels usually mean decreases in the variance, until a plateau is reached for highly expressed genes. We observe this behaviour in our plot. Moreover, the plot is also a diagnosis of filtering steps performed previously. The fact that there is not a drop in variance for the lower expression values indicates that the filtering threshold was good.
+`sva` was able to estimate `r sv$n.sv` surrogate variables. Regarding the mean-variance plot obtained with `voom`, it shows the variance in the y axis and the mean of expression in the x axis for each gene, represented as a black dot. Such plots contain a red curve that is fitted to the dots and show trends in the data. Normally increases in expression levels mean a decrease in the variance, until a plateau is reached for highly expressed genes. This trens is observed in the plot obtained for this data. Moreover, the plot is also a diagnosis of filtering steps performed upstream. The fact that there is not a drop in variance for the lower expression values indicates that the filtering threshold was good.
 
 <!--Info about voom plot from https://f1000research.com/articles/5-1408, https://genomebiology.biomedcentral.com/articles/10.1186/gb-2014-15-2-r29 and https://stats.stackexchange.com/questions/160255/voom-mean-variance-trend-plot-how-to-interpret-the-plot-->
 
-As we are performing multiple tests, the probability of type I errors (rejecting the null hypotheses when it is true). There are multiple statistical tools to decrease this errors, such as false discovery rate (FDR). This technique consists on defining an acceptable rate of type I errors (false discoveries). Here, we set a FDR of 0.05, which means that 5% of our rejections of the null hypothesis will be incorrect.
+As we are performing multiple tests, the probability of type I errors (rejecting the null hypotheses when it is true). There are multiple statistical tools to decrease this errors, such as the false discovery rate (FDR). This technique consists on defining an acceptable rate of type I errors (false discoveries). Here, a FDR of 0.05 is set, which means that 5% of the rejections of the null hypothesis will be incorrect.
 
 ```{r}
 FDRcutoff <- 0.05
@@ -76,7 +78,7 @@ res <- decideTests(fit, p.value = FDRcutoff)
 summary(res)
 ```
 
-Gene metadata such as the gene symbol and the chromosome can be added for an easier interpretation of the obtained statistics.
+Gene metadata such as the gene symbol and the chromosome can be added for an easier interpretation of the obtained statistics, and to observe the chromosome distribution of the differentially expressed genes.
 
 ```{r}
 # Get gene info...
@@ -88,16 +90,16 @@ tt <- topTable(fit, coef = 2, n = Inf)
 head(tt, n = 20)
 ```
 
-What we can see from this table is that the FDR-adjusted p-values are close to 1, so they are not significant. We can check how many genes can be considered differentially expressed under the `r FDRcutoff` FDR cuttoff.
+This table contains the relevant statistics used in the analysis, such as raw and adjusted p-values. In the case of the later ones, it can be seen that their values are close to one, which means that the result is not significant. The number of differentially expressed genes under the `r FDRcutoff` FDR cuttoff can be checked by applying a filter to this table.
 
 ```{r}
 DEgenes <- rownames(tt)[tt$adj.P.Val < FDRcutoff]
 length(DEgenes)
 ```
 
-So our differential expression analysis results in `r length(rownames(tt)[tt$adj.P.Val < FDRcutoff]))` differentially expressed genes.
+The differential expression analysis results in `r length(rownames(tt)[tt$adj.P.Val < FDRcutoff]))` differentially expressed genes.
 
-The results of a differential expression analysis can also be diagnosed with the distributions of raw p-values and moderated t-statistics.
+The distributions of raw p-values and moderated t-statistics can be used as a diagnosis of the tests performed.
 
 ```{r}
 par(mfrow = c(1, 2), mar = c(4, 5, 2, 2))
@@ -106,15 +108,15 @@ qqt(fit$t[, 2], df = fit$df.prior + fit$df.residual, main = "", pch = ".", cex =
 abline(0, 1, lwd = 2)
 ```
 
-Under the null hypothesis, we would expect a flat distribution of p-values. *And I think that the fact that there is not a enrichment of the low p-values is good, as this would mean that we are getting false positives because of too much variation in the data, or others.*
+Under the null hypothesis, which is that most genes are not differentially expressed, the raw p-value distribution should be uniform with a peak at low p-values for the truly DE genes. It is not the case.
 
-Regarding the second plot, it represents the quantiles of our data sample against the theoretical distribution they should follow. The diagonal represents the null hypothesis.
-
-I'M LEAVING THE COMMENT OF THIS TWO PLOTS UNTIL SOMEBODY TELLS ME WHAT THEY ACTUALLY MEAN
+Regarding the second plot, it represents the quantiles of our data sample against the theoretical distribution they should follow. The diagonal represents the null hypothesis. Most genes are off-diagonal, indicating that differentially expressed genes exist, but they are still close to it because they are not significant.
 
 ## Alternative differential expression analysis approaches
 
-As said previously, adding surrogate variables adjust for unknown variation, which in practice would translate into an increased number of differentially expressed genes with respect to an analysis done without including estimated surrogate variables. But in some cases it is possible that the surrogate analysis captures not only non-biological effects, but also some biological variability that is important for the outcome. This is specially true when there is some sort of heterogeneity on the data, for example when there are (unknown) subgroups. This motivates the following analyses, in which modifications to the surrogate variables are performed. In these analyses, code that is identical to the first analysis is not displayed.
+As said previously, adding surrogate variables adjusts for unknown variation, which in practice would translate into an increased number of differentially expressed genes with respect to analyses performed without including them. Usually this unknown variation would account for non-biological variability, but in some cases the surrogate variables can capture biological variability that is important for the outcome. One of such cases happens when there is some sort of heterogeneity in the data, such as unknown subgroups. When this happens, `sva` is not reccomended.
+
+Following this idea, two different modifications to the surrogate variables before performing the diferential expression analysis were done. In the first case they were not included, while only one of them was removed in the second. Note that code that was identical to the first analysis will not be displayed for clarity.
 
 ### Differential expression analysis without surrogate variable adjustment
 
