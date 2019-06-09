@@ -157,6 +157,9 @@ points(posx, posy, pch=".", cex=5, col="red")
 
 ```
 
+###not sure if this next section is right? this is similar to what marta did with doing the DE analysis twice
+
+
 All the gene sets showing differentally expressed genes were used in another differential expression analysis. Below, the genes showing the highest t-value are shown. 
 ```{r}
 genesmd <- data.frame(chr = as.character(seqnames(rowRanges(se.filt))), symbol = rowData(se.filt)[, 1], stringsAsFactors = FALSE)
