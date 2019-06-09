@@ -133,19 +133,18 @@ fit <- lmFit(v, mod) # Fit the model with the voom weights
 fit <- eBayes(fit) # Calculate moderated t-statistics
 ```
 
-`sva` was able to estimate `r sv$n.sv` surrogate variables. Regarding the mean-variance plot obtained with `voom`, it shows the variance in the y axis and the mean of expression in the x axis for each gene, represented as a black dot. The red curve is fitted to the dots, and shows the trends in the data: increases in expression levels usually mean decreases in the variance, until a plateau is reached for highly expressed genes. We observe this behaviour in our plot. Moreover, the plot is also a diagnosis of filtering steps performed previously. The fact that there is not a drop in variance for the lower expression values indicates that the filtering threshold was good.
+`sva` was able to estimate `r sv$n.sv` surrogate variables. COMMENT THE VOOM PLOT.
 
-As we are performing multiple tests, the probability of type I errors (rejecting the null hypotheses when it is true). There are multiple statistical tools to decrease this errors, such as false discovery rate (FDR). This technique consists on defining an acceptable rate of type I errors (false discoveries). Here, we set a FDR of 0.05, which means that 5% of our rejections of the null hypothesis will be incorrect.
+INTRODUCE FDR Here, we set a FDR of 0.05, which means that 5% of our rejections of the null hypothesis will be incorrect. Gene metadata such as the gene symbol and the chromosome can be added for an easier interpretation of the obtained statistics.
 
-```{r}
+```{r echo=FALSE}
 FDRcutoff <- 0.05
 res <- decideTests(fit, p.value = FDRcutoff)
 summary(res)
 ```
 
-Gene metadata such as the gene symbol and the chromosome can be added for an easier interpretation of the obtained statistics.
 
-```{r}
+```{r echo=FALSE}
 # Get gene info...
 genesmd <- data.frame(chr = as.character(seqnames(rowRanges(se.filt))), symbol = rowData(se.filt)[, 1], stringsAsFactors = FALSE)
 
@@ -155,16 +154,24 @@ tt <- topTable(fit, coef = 2, n = Inf)
 head(tt, n = 20)
 ```
 
-What we can see from this table is that the FDR-adjusted p-values are close to 1, so they are not significant. We can check how many genes can be considered differentially expressed under the `r FDRcutoff` FDR cuttoff.
+REWRITE We see how the asjusted p-values have decreased. We can check how many genes can be considered differentially expressed under the `r FDRcutoff` FDR cuttoff.
 
-```{r}
+```{r echo=FALSE}
 DEgenes <- rownames(tt)[tt$adj.P.Val < FDRcutoff]
 length(DEgenes)
 ```
 
-So our differential expression analysis results in `r length(rownames(tt)[tt$adj.P.Val < FDRcutoff]))` differentially expressed genes.
+REWRITE So our differential expression analysis results in `r length(rownames(tt)[tt$adj.P.Val < FDRcutoff]))` differentially expressed genes. We can check their chr distribution.
 
-The results of a differential expression analysis can also be diagnosed with the distributions of raw p-values and moderated t-statistics.
+```{r}
+sort(table(tt$chr[tt$adj.P.Val < FDRcutoff]), decreasing = TRUE)
+plot(sort(table(tt$chr[tt$adj.P.Val < FDRcutoff]), decreasing = TRUE))
+axis(side=1, cex.axis=0.35)
+```
+
+## DIAGNOSTICS
+
+The results of differential expression analyses can also be diagnosed with the distributions of raw p-values and moderated t-statistics.
 
 ```{r}
 par(mfrow = c(1, 2), mar = c(4, 5, 2, 2))
@@ -173,11 +180,23 @@ qqt(fit$t[, 2], df = fit$df.prior + fit$df.residual, main = "", pch = ".", cex =
 abline(0, 1, lwd = 2)
 ```
 
-Under the null hypothesis, we would expect a flat distribution of p-values. *And I think that the fact that there is not a enrichment of the low p-values is good, as this would mean that we are getting false positives because of too much variation in the data, or others.*
+COMMENT THOSE
 
-Regarding the second plot, it represents the quantiles of our data sample against the theoretical distribution they should follow. The diagonal represents the null hypothesis.
+```{r}
+par(mfrow = c(1, 2), mar = c(4, 5, 3, 2))
+volcanoplot(fit, coef = 2, highlight = 10, names = fit$genes$symbol, main = "Volcano")
 
-I'M LEAVING THE COMMENT OF THIS TWO PLOTS UNTIL SOMEBODY TELLS ME WHAT THEY ACTUALLY MEAN
+top <- order(fit$lods[, 2], decreasing = TRUE)[1:10]
+limma::plotMA(fit, coef = 2, status = rownames(fit$lods) %in% DEgenes, legend = FALSE,
+main = "MA Plot", hl.pch = 46, hl.cex = 4, bg.pch = 46, bg.cex = 3, las = 1)
+text(fit$Amean[top], fit$coef[top, 2], fit$genes$symbol[top], cex = 0.5, pos = 4)
+```
+
+The list of top 10 genes:
+
+```{r}
+fit$genes$symbol[top]
+```
 
 ### Differential expression analysis removing the first surrogate variable
 
@@ -269,7 +288,18 @@ main = "MA Plot", hl.pch = 46, hl.cex = 4, bg.pch = 46, bg.cex = 3, las = 1)
 text(fit$Amean[top], fit$coef[top, 2], fit$genes$symbol[top], cex = 0.5, pos = 4)
 ```
 
+The list of top 10 genes:
+
+```{r}
+fit$genes$symbol[top]
+```
+
 ### Performance comparison
+
+```{r}
+
+```
+
 
 
 
