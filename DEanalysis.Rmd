@@ -118,6 +118,67 @@ As said previously, adding surrogate variables adjust for unknown variation, whi
 
 ### Differential expression analysis without surrogate variable adjustment
 
+```{r, message=FALSE}
+# Obtain the patient ID, as the analysis is paired
+patientid <- substr(colnames(se.filt), 9, 12)
+samplevial <- substr(colnames(se.filt), 14, 16)
+
+# Build the model (mod) and null (mod0) matrices 
+mod <- model.matrix(~type + patientid, data = colData(se.filt))
+mod0 <- model.matrix(~1, data = colData(se.filt))
+
+v <- voom(dge.filt, mod, plot=TRUE)
+
+fit <- lmFit(v, mod) # Fit the model with the voom weights
+fit <- eBayes(fit) # Calculate moderated t-statistics
+```
+
+`sva` was able to estimate `r sv$n.sv` surrogate variables. Regarding the mean-variance plot obtained with `voom`, it shows the variance in the y axis and the mean of expression in the x axis for each gene, represented as a black dot. The red curve is fitted to the dots, and shows the trends in the data: increases in expression levels usually mean decreases in the variance, until a plateau is reached for highly expressed genes. We observe this behaviour in our plot. Moreover, the plot is also a diagnosis of filtering steps performed previously. The fact that there is not a drop in variance for the lower expression values indicates that the filtering threshold was good.
+
+As we are performing multiple tests, the probability of type I errors (rejecting the null hypotheses when it is true). There are multiple statistical tools to decrease this errors, such as false discovery rate (FDR). This technique consists on defining an acceptable rate of type I errors (false discoveries). Here, we set a FDR of 0.05, which means that 5% of our rejections of the null hypothesis will be incorrect.
+
+```{r}
+FDRcutoff <- 0.05
+res <- decideTests(fit, p.value = FDRcutoff)
+summary(res)
+```
+
+Gene metadata such as the gene symbol and the chromosome can be added for an easier interpretation of the obtained statistics.
+
+```{r}
+# Get gene info...
+genesmd <- data.frame(chr = as.character(seqnames(rowRanges(se.filt))), symbol = rowData(se.filt)[, 1], stringsAsFactors = FALSE)
+
+# and add it to the results
+fit$genes <- genesmd
+tt <- topTable(fit, coef = 2, n = Inf)
+head(tt, n = 20)
+```
+
+What we can see from this table is that the FDR-adjusted p-values are close to 1, so they are not significant. We can check how many genes can be considered differentially expressed under the `r FDRcutoff` FDR cuttoff.
+
+```{r}
+DEgenes <- rownames(tt)[tt$adj.P.Val < FDRcutoff]
+length(DEgenes)
+```
+
+So our differential expression analysis results in `r length(rownames(tt)[tt$adj.P.Val < FDRcutoff]))` differentially expressed genes.
+
+The results of a differential expression analysis can also be diagnosed with the distributions of raw p-values and moderated t-statistics.
+
+```{r}
+par(mfrow = c(1, 2), mar = c(4, 5, 2, 2))
+hist(tt$P.Value, xlab = "Raw P-values", main = "", las = 1)
+qqt(fit$t[, 2], df = fit$df.prior + fit$df.residual, main = "", pch = ".", cex = 3)
+abline(0, 1, lwd = 2)
+```
+
+Under the null hypothesis, we would expect a flat distribution of p-values. *And I think that the fact that there is not a enrichment of the low p-values is good, as this would mean that we are getting false positives because of too much variation in the data, or others.*
+
+Regarding the second plot, it represents the quantiles of our data sample against the theoretical distribution they should follow. The diagonal represents the null hypothesis.
+
+I'M LEAVING THE COMMENT OF THIS TWO PLOTS UNTIL SOMEBODY TELLS ME WHAT THEY ACTUALLY MEAN
+
 ### Differential expression analysis removing the first surrogate variable
 
 The removal of all the surrogate variables might be considered radical, as some of them might cature part of the unwanted variation which we want to adjust. As there was a possibility that only one of those variables contains biological variation, we decided to remove one by one each surrogate variable. We observed that with the first one, significant results were obtained, so we will show the analysis by removing this surrogate variable.
