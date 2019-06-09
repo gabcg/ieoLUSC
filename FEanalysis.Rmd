@@ -35,7 +35,13 @@ se.filt <- readRDS(file.path("results", "se.paired.filt.rds"))
 dge.filt <- readRDS(file.path("results", "dge.paired.filt.rds"))
 ```
 
-## Gene Set Enrichment Analysis
+# Functional enrichment analysis
+
+We will perform this three times: with and without SVA, and also without the first SV
+
+## With SVA
+
+### Gene set enrichment analysis
 
 Since no differentially expressed genes where identified in the previous section, a gene set enrichment analysis (GSEA) was completed. This procedure provides more sensitivity in identifying gene expression changes. This analysis assesses how genes are behaving differently between two phenotypic states. The phenotypic states in this study are tumor and normal samples. The analysis calculates an enrichment score for each gene set. This score provides information on the changes in gene expression by inidividual genes in the gene set. 
 
@@ -134,7 +140,7 @@ DEgs <- names(pvadj)[which(pvadj < 0.01)]
 length(DEgs)
 ```
 
-## Gene Set Variation Analysis 
+### Gene set variation analysis (GSVA) 
 
 Since the GSEA showed no gene set were differentially expressed, a gene set variation analysis (GSVA) was performed. This differs from the standard GSEA, because a GSVA characterizes the underlying biological pathway activity rather than the behavior of functionally related genes. The goal is to see how the biological pathway activity compares among the two groups. 
 
@@ -209,7 +215,7 @@ volcanoplot(fit, coef = 2, highlight = 10, names = fit$genes$symbol, main = "Mod
 top10 <- order(fit$lods[, 2], decreasing = TRUE)[1:10]
 ```
 
-## Gene Ontology analysis
+### Gene ontology analysis
 
 bp = biological process = default setting
 
@@ -254,6 +260,22 @@ according to the professor, we want INF odds ratios after applying the filter...
 Inf OR values mean occur when all gene in a gene set are differentially expressed. this the best-case scenario, the gene set is fully enriched!
 
 however, this usually happens when the gene set is formed by only one or two genes. we discussed in class, that significantly enriched gene sets formed by just a few genes, e.g.. < 5 or < 3, are not very reliable and it's better to filter them out but if you have gene sets with >= 5 genes and are fully enrich, these should point out to very clear functions being altered in your data set.
+
+## Without SVA
+
+### GSEA
+
+### GSVA
+
+### Gene ontology analysis
+
+## Without the first SV
+
+### GSEA
+
+### GSVA
+
+### Gene ontology analysis
 
 ## Session information
 
