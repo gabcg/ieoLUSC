@@ -97,7 +97,7 @@ DEgenes <- rownames(tt)[tt$adj.P.Val < FDRcutoff]
 length(DEgenes)
 ```
 
-The differential expression analysis results in `r length(rownames(tt)[tt$adj.P.Val < FDRcutoff]))` differentially expressed genes.
+The differential expression analysis results in `r length(rownames(tt)[tt$adj.P.Val < FDRcutoff])` differentially expressed genes.
 
 #### Diagnostics
 
@@ -166,7 +166,7 @@ DEgenes <- rownames(tt)[tt$adj.P.Val < FDRcutoff]
 length(DEgenes)
 ```
 
-In this case, the differential expression analysis results in `r length(rownames(tt)[tt$adj.P.Val < FDRcutoff]))` significant differentially expressed genes. Now, the chromosome distribution of the genes can be assessed.
+In this case, the differential expression analysis results in `r length(rownames(tt)[tt$adj.P.Val < FDRcutoff])` significant differentially expressed genes. Now, the chromosome distribution of the genes can be assessed.
 
 ```{r chromosomedistr-noSVA, out.width="800px", fig.cap="Chromosome distribution of the DE genes for the analysis without SVA"}
 sort(table(tt$chr[tt$adj.P.Val < FDRcutoff]), decreasing = TRUE)
@@ -267,7 +267,7 @@ DEgenes <- rownames(tt)[tt$adj.P.Val < FDRcutoff]
 length(DEgenes)
 ```
 
-So the differential expression analysis without the first surrogate variable results in `r length(rownames(tt)[tt$adj.P.Val < FDRcutoff]))` differentially expressed genes. Their chromosome distribution can be assessed.
+So the differential expression analysis without the first surrogate variable results in `r length(rownames(tt)[tt$adj.P.Val < FDRcutoff])` differentially expressed genes. Their chromosome distribution can be assessed.
 
 ```{r chromosomedistr-noSV1, echo=FALSE, out.width="800px", fig.cap="Chromosome distribution of the DE genes for the analysis without SV1"}
 sort(table(tt$chr[tt$adj.P.Val < FDRcutoff]), decreasing = TRUE)
