@@ -112,51 +112,15 @@ Regarding the second plot, it represents the quantiles of our data sample agains
 
 I'M LEAVING THE COMMENT OF THIS TWO PLOTS UNTIL SOMEBODY TELLS ME WHAT THEY ACTUALLY MEAN
 
-## Differential expression using limma-voom and removing one SV
+## Alternative differential expression analysis approaches
 
-As said previously, adding surrogate variables adjust for unknown variation, which in practice would translate into an increased number of differentially expressed genes with respect to an analysis done without including estimated surrogate variables. But in some cases it is possible that the surrogate analysis captures not only non-biological effects, but also some biological variability that is important for the outcome. This is specially true when there is some sort of heterogeneity on the data, for example when there are (unknown) subgroups.
+As said previously, adding surrogate variables adjust for unknown variation, which in practice would translate into an increased number of differentially expressed genes with respect to an analysis done without including estimated surrogate variables. But in some cases it is possible that the surrogate analysis captures not only non-biological effects, but also some biological variability that is important for the outcome. This is specially true when there is some sort of heterogeneity on the data, for example when there are (unknown) subgroups. This motivates the following analyses, in which modifications to the surrogate variables are performed. In these analyses, code that is identical to the first analysis is not displayed.
 
-Then, we will perform the same `limma-voom` analysis a before, but removing the first surrogate variable. Code that is identical to the previous part will not be shown.
+### Differential expression analysis without surrogate variable adjustment
 
----
-output:
-  BiocStyle::html_document
----
+### Differential expression analysis removing the first surrogate variable
 
-<!---
-Because we split the analysis pipeline in different independent files, to speed up processing it, here in the setup block we load libraries and objects that were loaded or produced in the previously processed file, and which are necessary in this file.
---->
-
-```{r setup, cache=FALSE, echo=FALSE, results='hide', message=FALSE}
-library(knitr)
-library(SummarizedExperiment)
-library(edgeR)
-library(geneplotter)
-opts_chunk$set(cache=TRUE,
-               cache.path="cache/file2",
-               cache.extra=R.version.string,
-               autodep=TRUE,
-               fig.align="center",
-               comment="")
-se.unpaired <- readRDS(file.path("rawCounts", "seLUSC.rds"))
-dg.unpaired <- readRDS(file.path("results", "dge.rds"))
-se <- readRDS(file.path("results", "se.paired.rds"))
-dge <- readRDS(file.path("results", "dge.paired.rds"))
-se.filt.unnorm <- readRDS(file.path("results", "se.paired.filt.unnorm.rds"))
-dge.filt.unnorm <- readRDS(file.path("results", "dge.paired.filt.unnorm.rds"))
-se.filt <- readRDS(file.path("results", "se.paired.filt.rds"))
-dge.filt <- readRDS(file.path("results", "dge.paired.filt.rds"))
-```
-
-# Differential expression
-
-## Differential expression using limma-voom
-
-We perform a simple examination of expression changes and their associated p-values using the R/Bioconductor package [sva](http://bioconductor.org/packages/sva).
-
-In order to use the method, a matrix of the model, including adjustment variables, and a null model which only includes the adjustment variables have to be created. In our case there are no factors to adjust, so we give ~1 as the intercept term in the model. Also, as the design of the analysis is paired (both types of samples come from the same patient), we need to add an identifier of the patient to the model.
-
-Even if no known sources of variation were found, we can use SVA to estimate surrogate variables and add them to the model. These variables represent the unknown variation of the data.
+The removal of all the surrogate variables might be considered radical, as some of them might cature part of the unwanted variation which we want to adjust. As there was a possibility that only one of those variables contains biological variation, we decided to remove one by one each surrogate variable. We observed that with the first one, significant results were obtained, so we will show the analysis by removing this surrogate variable.
 
 ```{r, message=FALSE}
 library(sva)
@@ -211,7 +175,15 @@ DEgenes <- rownames(tt)[tt$adj.P.Val < FDRcutoff]
 length(DEgenes)
 ```
 
-So the differential expression analysis without the first surrogate variable results in `r length(rownames(tt)[tt$adj.P.Val < FDRcutoff]))` differentially expressed genes.
+So the differential expression analysis without the first surrogate variable results in `r length(rownames(tt)[tt$adj.P.Val < FDRcutoff]))` differentially expressed genes. Their chromosome distribution can be assessed.
+
+```{r}
+sort(table(tt$chr[tt$adj.P.Val < FDRcutoff]), decreasing = TRUE)
+plot(sort(table(tt$chr[tt$adj.P.Val < FDRcutoff]), decreasing = TRUE))
+axis(side=1, cex.axis=0.35)
+```
+
+#### Diagnostics
 
 The results of a differential expression analysis can also be diagnosed with the distributions of raw p-values and moderated t-statistics.
 
@@ -222,13 +194,21 @@ qqt(fit$t[, 2], df = fit$df.prior + fit$df.residual, main = "", pch = ".", cex =
 abline(0, 1, lwd = 2)
 ```
 
-Under the null hypothesis, we would expect a flat distribution of p-values. *And I think that the fact that there is not a enrichment of the low p-values is good, as this would mean that we are getting false positives because of too much variation in the data, or others.*
+We observe that the assumption of a flat distribution of raw p-values for the non-DE genes under the null hypothesis holds in this case. We also observe in the QQ plot how the DE genes are far from the null hypothesis.
 
-Regarding the second plot, it represents the quantiles of our data sample against the theoretical distribution they should follow. The diagonal represents the null hypothesis.
+ALSO KKKKAKAKAKAKKAJHJAGJFUGHT
 
-I'M LEAVING THE COMMENT OF THIS TWO PLOTS UNTIL SOMEBODY TELLS ME WHAT THEY ACTUALLY MEAN
+```{r}
+par(mfrow = c(1, 2), mar = c(4, 5, 3, 2))
+volcanoplot(fit, coef = 2, highlight = 10, names = fit$genes$symbol, main = "Volcano")
 
+top <- order(fit$lods[, 2], decreasing = TRUE)[1:10]
+limma::plotMA(fit, coef = 2, status = rownames(fit$lods) %in% DEgenes, legend = FALSE,
+main = "MA Plot", hl.pch = 46, hl.cex = 4, bg.pch = 46, bg.cex = 3, las = 1)
+text(fit$Amean[top], fit$coef[top, 2], fit$genes$symbol[top], cex = 0.5, pos = 4)
+```
 
+### Performance comparison
 
 
 
@@ -236,30 +216,25 @@ I'M LEAVING THE COMMENT OF THIS TWO PLOTS UNTIL SOMEBODY TELLS ME WHAT THEY ACTU
 There are `r sum(p.adjust(pv, method="fdr") < 0.01)` genes changing significantly their expression at FDR < 1%. In Figure \@ref(fig:pdist) below we show the distribution of the resulting p-values. This distribution should be uniform with a peak at low p-values for the truly DE genes, assuming that most genes are not differentially expressed.
 
 ```{r pdist, echo=FALSE, out.width="800px", fig.cap="Distribution of raw p-values for an F-test on every gene between tumor and normal samples."}
-hist(pv, main="", las=1)
+
 
 ```
 
 The `sva()` function is able to estimate surrogate variables, which have continuous values that can be used to correct and adjust unmeasured and unwanted effects.
 
 ```{r}
-sv <- sva(assays(se.filt)$logCPM, mod, mod0)
-sv$n
 ```
 
 The SVA algorithm has found `r sv$n` surrogate variables. Let's use them to assess againt the extent of differential expression this time adjusting for these surrogate variables.
 
 ```{r}
-modsv <- cbind(mod, sv$sv)
-mod0sv <- cbind(mod0, sv$sv)
-pvsv <- f.pvalue(assays(se.filt)$logCPM, modsv, mod0sv)
-sum(p.adjust(pvsv, method="fdr") < 0.01)
+
 ```
 
 We have increased the number of changing genes to `r sum(p.adjust(pvsv, method="fdr") < 0.01)`. Figure \@ref(fig:psvdist) shows the resulting distribution of p-values.
 
 ```{r psvdist, echo=FALSE, out.width="800px", fig.cap="Distribution of raw p-values for an F-test on every gene between tumor and normal samples, adjusting for surrogate variables estimated with SVA."}
-hist(pvsv, main="", las=1)
+
 ```
 
 ## Session information
