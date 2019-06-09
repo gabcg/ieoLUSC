@@ -41,11 +41,7 @@ We will perform this three times: with and without SVA, and also without the fir
 
 ## With SVA
 
-<<<<<<< HEAD
 ### Gene set enrichment analysis (GSEA)
-=======
-### Gene set enrichment analysis
->>>>>>> 6b0dfd8f05378684d4b188cea902a0db09e15843
 
 Since no differentially expressed genes where identified in the previous section, a gene set enrichment analysis (GSEA) was completed. This procedure provides more sensitivity in identifying gene expression changes. This analysis assesses how genes are behaving differently between two phenotypic states. The phenotypic states in this study are tumor and normal samples. The analysis calculates an enrichment score for each gene set. This score provides information on the changes in gene expression by inidividual genes in the gene set. 
 
@@ -144,11 +140,7 @@ DEgs <- names(pvadj)[which(pvadj < 0.01)]
 length(DEgs)
 ```
 
-<<<<<<< HEAD
 ### Gene set variation analysis (GSVA)
-=======
-### Gene set variation analysis (GSVA) 
->>>>>>> 6b0dfd8f05378684d4b188cea902a0db09e15843
 
 Since the GSEA showed no gene set were differentially expressed, a gene set variation analysis (GSVA) was performed. This differs from the standard GSEA, because a GSVA characterizes the underlying biological pathway activity rather than the behavior of functionally related genes. The goal is to see how the biological pathway activity compares among the two groups. 
 
@@ -271,29 +263,17 @@ however, this usually happens when the gene set is formed by only one or two gen
 
 ## Without SVA
 
-<<<<<<< HEAD
 ### Gene set enrichment analysis (GSEA)
 
 ### Gene set variation analysis (GSVA)
-=======
-### GSEA
-
-### GSVA
->>>>>>> 6b0dfd8f05378684d4b188cea902a0db09e15843
 
 ### Gene ontology analysis
 
 ## Without the first SV
 
-<<<<<<< HEAD
 ### Gene set enrichment analysis (GSEA)
 
 ### Gene set variation analysis (GSVA)
-=======
-### GSEA
-
-### GSVA
->>>>>>> 6b0dfd8f05378684d4b188cea902a0db09e15843
 
 ### Gene ontology analysis
 
