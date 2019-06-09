@@ -70,10 +70,10 @@ fit <- eBayes(fit) # Calculate moderated t-statistics
 
 <!--Info about voom plot from https://f1000research.com/articles/5-1408, https://genomebiology.biomedcentral.com/articles/10.1186/gb-2014-15-2-r29 and https://stats.stackexchange.com/questions/160255/voom-mean-variance-trend-plot-how-to-interpret-the-plot-->
 
-As we are performing multiple tests, the probability of type I errors (rejecting the null hypotheses when it is true). There are multiple statistical tools to decrease this errors, such as the false discovery rate (FDR). This technique consists on defining an acceptable rate of type I errors (false discoveries). Here, a FDR of 0.05 is set, which means that 5% of the rejections of the null hypothesis will be incorrect.
+As we are performing multiple tests, the probability of type I errors (rejecting the null hypotheses when it is true). There are multiple statistical tools to decrease this errors, such as the false discovery rate (FDR). This technique consists on defining an acceptable rate of type I errors (false discoveries). Here, a FDR of 0.1 is set, which means that 1% of the rejections of the null hypothesis will be incorrect.
 
 ```{r}
-FDRcutoff <- 0.05
+FDRcutoff <- 0.1
 res <- decideTests(fit, p.value = FDRcutoff)
 summary(res)
 ```
@@ -141,10 +141,10 @@ fit <- eBayes(fit) # Calculate moderated t-statistics
 
 `sva` was able to estimate `r sv$n.sv` surrogate variables. There are not relevant variations in the mean-variance plot.
 
-The correction for multiple testing is the same as in the previous analysis, a FDR of 0.05. After this, gene metadata is added for interpretation purposes.
+The correction for multiple testing is the same as in the previous analysis, a FDR of 0.1. After this, gene metadata is added for interpretation purposes.
 
 ```{r echo=FALSE}
-FDRcutoff <- 0.05
+FDRcutoff <- 0.1
 res <- decideTests(fit, p.value = FDRcutoff)
 summary(res)
 ```
@@ -209,7 +209,7 @@ text(fit$Amean[top], fit$coef[top, 2], fit$genes$symbol[top], cex = 0.5, pos = 4
 
 ### Differential expression analysis removing the first surrogate variable
 
-The removal of all the surrogate variables might be considered radical, as some of them might cature part of the unwanted variation which we want to adjust. As there was a possibility that only one of those variables contains biological variation, we decided to remove one by one each surrogate variable. We observed that with the first one, significant results were obtained, so we will show the analysis by removing this surrogate variable.
+The removal of all the surrogate variables might be considered radical, as some of them might be capturing part of the unwanted non-biological variation. It is possible that only one of the variables is capturing the relevant biological information. By removing each of them one at a time, it was observed that the variable responsible for this was the first one, so the following analysis is performed by removing it. The others can be done by simply modifying the number on the `svmod <- sv$sv[,-1]` line.
 
 #### Analysis
 
@@ -239,12 +239,12 @@ fit <- lmFit(v, mod) # Fit the model with the voom weights
 fit <- eBayes(fit) # Calculate moderated t-statistics
 ```
 
-`sva` was able to estimate `r sv$n.sv` surrogate variables. The mean-variance plot obtained with `voom`, is similar to the one done with all the surrogate variables.
+`sva` estimated `r sv$n.sv` surrogate variables, though `r (sv$n.sv)-1` will be used. There are not relevant variations in the mean-variance plot.
 
-Next, we set a a FDR of 0.05 and get some preliminary results, and later we add the gene metadata.
+The correction for multiple testing is maintained to a FDR of 0.1. Some preliminary data on upregulation and downregulation is obtained and gene metadata is added for interpretation purposes.
 
 ```{r echo=FALSE}
-FDRcutoff <- 0.05
+FDRcutoff <- 0.1
 res <- decideTests(fit, p.value = FDRcutoff)
 summary(res)
 ```
@@ -259,7 +259,7 @@ tt <- topTable(fit, coef = 2, n = Inf)
 head(tt, n = 20)
 ```
 
-We already see how the adjusted p-values are smaller,     s. Again, we check how many genes are considered differentially expressed under the `r FDRcutoff` FDR cuttoff.
+As in the study without surrogate variables, a drop on the adjusted p-values is already observed, leading to significant expression changes. The number of significantly differentially expressed genes is obtained by filtering the table by the `r FDRcutoff` FDR cuttoff value.
 
 ```{r echo=FALSE}
 DEgenes <- rownames(tt)[tt$adj.P.Val < FDRcutoff]
@@ -274,9 +274,19 @@ plot(sort(table(tt$chr[tt$adj.P.Val < FDRcutoff]), decreasing = TRUE))
 axis(side=1, cex.axis=0.35)
 ```
 
+This result also ressembles the analysis without surrogate variables, with a variable distribution in which big chromosomes rank higher, as well as some smaller chromosomes.
+
+A list of the top 10 differentially expressed genes can be obtained:
+
+```{r}
+fit$genes$symbol[top]
+```
+
+It can be observed that the genes in the list have changed.
+
 #### Diagnostics
 
-The results of a differential expression analysis can also be diagnosed with the distributions of raw p-values and moderated t-statistics.
+The performance of the statistical test is diagnosed with the distributions of raw p-values and moderated t-statistics.
 
 ```{r echo=FALSE}
 par(mfrow = c(1, 2), mar = c(4, 5, 2, 2))
@@ -285,9 +295,9 @@ qqt(fit$t[, 2], df = fit$df.prior + fit$df.residual, main = "", pch = ".", cex =
 abline(0, 1, lwd = 2)
 ```
 
-We observe that the assumption of a flat distribution of raw p-values for the non-DE genes under the null hypothesis holds in this case. We also observe in the QQ plot how the DE genes are far from the null hypothesis.
+The result is, again, similar to the previous analysis. The flat distribution for non-DE genes is present, but the peak is higher, as there are more differentially expressed genes. The QQ plot is similar.
 
-ALSO KKKKAKAKAKAKKAJHJAGJFUGHT
+The results are diagnosed with volcano and MA plots, in which the top 10 differentially expressed genes are highlighted.
 
 ```{r}
 par(mfrow = c(1, 2), mar = c(4, 5, 3, 2))
@@ -297,13 +307,6 @@ top <- order(fit$lods[, 2], decreasing = TRUE)[1:10]
 limma::plotMA(fit, coef = 2, status = rownames(fit$lods) %in% DEgenes, legend = FALSE,
 main = "MA Plot", hl.pch = 46, hl.cex = 4, bg.pch = 46, bg.cex = 3, las = 1)
 text(fit$Amean[top], fit$coef[top, 2], fit$genes$symbol[top], cex = 0.5, pos = 4)
-```
-
-The list of top 10 genes:
-
-
-```{r}
-fit$genes$symbol[top]
 ```
 
 ### Performance comparison
