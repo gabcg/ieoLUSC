@@ -99,6 +99,8 @@ length(DEgenes)
 
 The differential expression analysis results in `r length(rownames(tt)[tt$adj.P.Val < FDRcutoff]))` differentially expressed genes.
 
+#### Diagnostics
+
 The distributions of raw p-values and moderated t-statistics can be used as a diagnosis of the tests performed.
 
 ```{r}
@@ -120,6 +122,8 @@ Following this idea, two different modifications to the surrogate variables befo
 
 ### Differential expression analysis without surrogate variable adjustment
 
+The first analysis will consist on the removal of the surrogate variable estimation and inclusion into the model.
+
 ```{r, message=FALSE}
 # Obtain the patient ID, as the analysis is paired
 patientid <- substr(colnames(se.filt), 9, 12)
@@ -135,16 +139,15 @@ fit <- lmFit(v, mod) # Fit the model with the voom weights
 fit <- eBayes(fit) # Calculate moderated t-statistics
 ```
 
-`sva` was able to estimate `r sv$n.sv` surrogate variables. COMMENT THE VOOM PLOT.
+`sva` was able to estimate `r sv$n.sv` surrogate variables. There are not relevant variations in the mean-variance plot.
 
-INTRODUCE FDR Here, we set a FDR of 0.05, which means that 5% of our rejections of the null hypothesis will be incorrect. Gene metadata such as the gene symbol and the chromosome can be added for an easier interpretation of the obtained statistics.
+The correction for multiple testing is the same as in the previous analysis, a FDR of 0.05. After this, gene metadata is added for interpretation purposes.
 
 ```{r echo=FALSE}
 FDRcutoff <- 0.05
 res <- decideTests(fit, p.value = FDRcutoff)
 summary(res)
 ```
-
 
 ```{r echo=FALSE}
 # Get gene info...
@@ -156,14 +159,14 @@ tt <- topTable(fit, coef = 2, n = Inf)
 head(tt, n = 20)
 ```
 
-REWRITE We see how the asjusted p-values have decreased. We can check how many genes can be considered differentially expressed under the `r FDRcutoff` FDR cuttoff.
+A drop on the adjusted p-values is already observed, leading to significant expression changes. The number of significantly differentially expressed genes is obtained by filtering the table by the `r FDRcutoff` FDR cuttoff value.
 
 ```{r echo=FALSE}
 DEgenes <- rownames(tt)[tt$adj.P.Val < FDRcutoff]
 length(DEgenes)
 ```
 
-REWRITE So our differential expression analysis results in `r length(rownames(tt)[tt$adj.P.Val < FDRcutoff]))` differentially expressed genes. We can check their chr distribution.
+In this case, the differential expression analysis results in `r length(rownames(tt)[tt$adj.P.Val < FDRcutoff]))` significant differentially expressed genes. Now, the chromosome distribution of the genes can be assessed.
 
 ```{r}
 sort(table(tt$chr[tt$adj.P.Val < FDRcutoff]), decreasing = TRUE)
@@ -171,9 +174,17 @@ plot(sort(table(tt$chr[tt$adj.P.Val < FDRcutoff]), decreasing = TRUE))
 axis(side=1, cex.axis=0.35)
 ```
 
-## DIAGNOSTICS
+The distribution is pretty variable: most differentially expressed genes are located in big chromosomes, but smaller chromosomes are sometimes located higher in the ranking from what would be expected by its size.
 
-The results of differential expression analyses can also be diagnosed with the distributions of raw p-values and moderated t-statistics.
+A list of the top 10 differentially expressed genes can be obtained:
+
+```{r}
+fit$genes$symbol[top]
+```
+
+#### Diagnostics
+
+The performance of the statistical test is diagnosed with the distributions of raw p-values and moderated t-statistics.
 
 ```{r}
 par(mfrow = c(1, 2), mar = c(4, 5, 2, 2))
@@ -182,7 +193,9 @@ qqt(fit$t[, 2], df = fit$df.prior + fit$df.residual, main = "", pch = ".", cex =
 abline(0, 1, lwd = 2)
 ```
 
-COMMENT THOSE
+The assumption of a flat distribution of raw p-values for the non-DE genes under the null hypothesis holds in this case. In the QQ plot, more genes are far from the null hypothesis, which indicates significant differential expression.
+
+The results are diagnosed with volcano and MA plots, in which the top 10 differentially expressed genes are highlighted.
 
 ```{r}
 par(mfrow = c(1, 2), mar = c(4, 5, 3, 2))
@@ -194,15 +207,11 @@ main = "MA Plot", hl.pch = 46, hl.cex = 4, bg.pch = 46, bg.cex = 3, las = 1)
 text(fit$Amean[top], fit$coef[top, 2], fit$genes$symbol[top], cex = 0.5, pos = 4)
 ```
 
-The list of top 10 genes:
-
-```{r}
-fit$genes$symbol[top]
-```
-
 ### Differential expression analysis removing the first surrogate variable
 
 The removal of all the surrogate variables might be considered radical, as some of them might cature part of the unwanted variation which we want to adjust. As there was a possibility that only one of those variables contains biological variation, we decided to remove one by one each surrogate variable. We observed that with the first one, significant results were obtained, so we will show the analysis by removing this surrogate variable.
+
+#### Analysis
 
 ```{r, message=FALSE}
 library(sva)
@@ -250,7 +259,7 @@ tt <- topTable(fit, coef = 2, n = Inf)
 head(tt, n = 20)
 ```
 
-We already see how the adjusted p-values are smaller, leading to significant expression changes. Again, we check how many genes are considered differentially expressed under the `r FDRcutoff` FDR cuttoff.
+We already see how the adjusted p-values are smaller,     s. Again, we check how many genes are considered differentially expressed under the `r FDRcutoff` FDR cuttoff.
 
 ```{r echo=FALSE}
 DEgenes <- rownames(tt)[tt$adj.P.Val < FDRcutoff]
