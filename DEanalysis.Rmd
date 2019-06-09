@@ -30,7 +30,7 @@ dge.filt <- readRDS(file.path("results", "dge.paired.filt.rds"))
 
 # Differential expression
 
-## Differential expression using limma-voom
+## Differential expression using limma-voom and SVA
 
 We perform a simple examination of expression changes and their associated p-values using the R/Bioconductor package [sva](http://bioconductor.org/packages/sva).
 
@@ -111,6 +111,125 @@ Under the null hypothesis, we would expect a flat distribution of p-values. *And
 Regarding the second plot, it represents the quantiles of our data sample against the theoretical distribution they should follow. The diagonal represents the null hypothesis.
 
 I'M LEAVING THE COMMENT OF THIS TWO PLOTS UNTIL SOMEBODY TELLS ME WHAT THEY ACTUALLY MEAN
+
+## Differential expression using limma-voom and removing one SV
+
+As said previously, adding surrogate variables adjust for unknown variation, which in practice would translate into an increased number of differentially expressed genes with respect to an analysis done without including estimated surrogate variables. But in some cases it is possible that the surrogate analysis captures not only non-biological effects, but also some biological variability that is important for the outcome. This is specially true when there is some sort of heterogeneity on the data, for example when there are (unknown) subgroups.
+
+Then, we will perform the same `limma-voom` analysis a before, but removing the first surrogate variable. Code that is identical to the previous part will not be shown.
+
+---
+output:
+  BiocStyle::html_document
+---
+
+<!---
+Because we split the analysis pipeline in different independent files, to speed up processing it, here in the setup block we load libraries and objects that were loaded or produced in the previously processed file, and which are necessary in this file.
+--->
+
+```{r setup, cache=FALSE, echo=FALSE, results='hide', message=FALSE}
+library(knitr)
+library(SummarizedExperiment)
+library(edgeR)
+library(geneplotter)
+opts_chunk$set(cache=TRUE,
+               cache.path="cache/file2",
+               cache.extra=R.version.string,
+               autodep=TRUE,
+               fig.align="center",
+               comment="")
+se.unpaired <- readRDS(file.path("rawCounts", "seLUSC.rds"))
+dg.unpaired <- readRDS(file.path("results", "dge.rds"))
+se <- readRDS(file.path("results", "se.paired.rds"))
+dge <- readRDS(file.path("results", "dge.paired.rds"))
+se.filt.unnorm <- readRDS(file.path("results", "se.paired.filt.unnorm.rds"))
+dge.filt.unnorm <- readRDS(file.path("results", "dge.paired.filt.unnorm.rds"))
+se.filt <- readRDS(file.path("results", "se.paired.filt.rds"))
+dge.filt <- readRDS(file.path("results", "dge.paired.filt.rds"))
+```
+
+# Differential expression
+
+## Differential expression using limma-voom
+
+We perform a simple examination of expression changes and their associated p-values using the R/Bioconductor package [sva](http://bioconductor.org/packages/sva).
+
+In order to use the method, a matrix of the model, including adjustment variables, and a null model which only includes the adjustment variables have to be created. In our case there are no factors to adjust, so we give ~1 as the intercept term in the model. Also, as the design of the analysis is paired (both types of samples come from the same patient), we need to add an identifier of the patient to the model.
+
+Even if no known sources of variation were found, we can use SVA to estimate surrogate variables and add them to the model. These variables represent the unknown variation of the data.
+
+```{r, message=FALSE}
+library(sva)
+# Obtain the patient ID, as the analysis is paired
+patientid <- substr(colnames(se.filt), 9, 12)
+samplevial <- substr(colnames(se.filt), 14, 16)
+
+# Build the model (mod) and null (mod0) matrices 
+mod <- model.matrix(~type + patientid, data = colData(se.filt))
+mod0 <- model.matrix(~1, data = colData(se.filt))
+
+# Estimate surrogate variables
+sv <- sva(assays(se.filt)$logCPM, mod = mod, mod0 = mod0)
+
+# Remove the first surrogate variable
+svmod <- sv$sv[,-1]
+
+# Add surrogates to the design matrix
+len <- length(colnames(mod))
+mod <- cbind(mod, svmod)
+colnames(mod) <- c(colnames(mod)[1:len], paste0("SV", 1:(sv$n-1)))
+v <- voom(dge.filt, mod, plot=TRUE)
+
+fit <- lmFit(v, mod) # Fit the model with the voom weights
+fit <- eBayes(fit) # Calculate moderated t-statistics
+```
+
+`sva` was able to estimate `r sv$n.sv` surrogate variables. The mean-variance plot obtained with `voom`, is similar to the one done with all the surrogate variables.
+
+Next, we set a a FDR of 0.05 and get some preliminary results, and later we add the gene metadata.
+
+```{r echo=FALSE}
+FDRcutoff <- 0.05
+res <- decideTests(fit, p.value = FDRcutoff)
+summary(res)
+```
+
+```{r echo=FALSE}
+# Get gene info...
+genesmd <- data.frame(chr = as.character(seqnames(rowRanges(se.filt))), symbol = rowData(se.filt)[, 1], stringsAsFactors = FALSE)
+
+# and add it to the results
+fit$genes <- genesmd
+tt <- topTable(fit, coef = 2, n = Inf)
+head(tt, n = 20)
+```
+
+We already see how the adjusted p-values are smaller, leading to significant expression changes. Again, we check how many genes are considered differentially expressed under the `r FDRcutoff` FDR cuttoff.
+
+```{r echo=FALSE}
+DEgenes <- rownames(tt)[tt$adj.P.Val < FDRcutoff]
+length(DEgenes)
+```
+
+So the differential expression analysis without the first surrogate variable results in `r length(rownames(tt)[tt$adj.P.Val < FDRcutoff]))` differentially expressed genes.
+
+The results of a differential expression analysis can also be diagnosed with the distributions of raw p-values and moderated t-statistics.
+
+```{r echo=FALSE}
+par(mfrow = c(1, 2), mar = c(4, 5, 2, 2))
+hist(tt$P.Value, xlab = "Raw P-values", main = "", las = 1)
+qqt(fit$t[, 2], df = fit$df.prior + fit$df.residual, main = "", pch = ".", cex = 3)
+abline(0, 1, lwd = 2)
+```
+
+Under the null hypothesis, we would expect a flat distribution of p-values. *And I think that the fact that there is not a enrichment of the low p-values is good, as this would mean that we are getting false positives because of too much variation in the data, or others.*
+
+Regarding the second plot, it represents the quantiles of our data sample against the theoretical distribution they should follow. The diagonal represents the null hypothesis.
+
+I'M LEAVING THE COMMENT OF THIS TWO PLOTS UNTIL SOMEBODY TELLS ME WHAT THEY ACTUALLY MEAN
+
+
+
 
 ## Enrichment analysis
 
