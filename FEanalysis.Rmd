@@ -15,6 +15,8 @@ library(knitr)
 library(SummarizedExperiment)
 library(edgeR)
 library(geneplotter)
+library(limma)
+library(sva)
 
 opts_chunk$set(cache=TRUE,
                cache.path="cache/file2",
@@ -88,8 +90,6 @@ dim(dge.filt)
 With the data ready, the same SVA procedure was completed without calling any gene differentially expressed.
 
 ```{r}
-library(limma)
-library(sva)
 patientid <- substr(colnames(se.filt), 9, 12)
 samplevial <- substr(colnames(se.filt), 14, 16)
 mod <- model.matrix(~type + patientid, data = colData(se.filt))
@@ -198,7 +198,9 @@ tt <- topTable(fit, coef = 2, n = Inf)
 head(tt, n = 10)
 ```
 
-A total of 10 genes were found to be differentally expressed across the gene sets gathered from the GSVA.
+Here is a list of the top 10 genes that were found to be differentally expressed across the gene sets gathered from the GSVA.
+
+A total of 4128 genes among the gene sets were found to be differentially expressed after the GVSA.
 
 ```{r}
 DEgenes <- rownames(tt)[tt$adj.P.Val < FDRcutoff]
@@ -206,8 +208,6 @@ length(DEgenes)
 saveRDS(DEgenes, file.path("results", "DEgenes.rds"))
 par(mfrow = c(1, 2), mar = c(4, 5, 2, 2))
 ```
-
-Here are the top 10
 
 ```{r}
 par(mfrow = c(1, 2), mar = c(4, 5, 3, 2))
@@ -217,9 +217,9 @@ top10 <- order(fit$lods[, 2], decreasing = TRUE)[1:10]
 
 ### Gene Ontology Analysis
 
+After finding differentially expressed genes, the next step was to complete a gene ontology analysis. This procedure was completed to see if the DE genes were associated with certain biological processes defined by the Gene Ontology system. 
 
-
-bp = biological process = default setting
+The first step in this process is build a parameter object specifying the gene universe of interest, the set of DE genes, the ontology, etc. The ontology selected was "BP", which matches genes to the Biological Processes associated with the GO Terms.
 
 ```{r}
 geneUniverse <- rownames(se.filt)
@@ -227,6 +227,49 @@ length(geneUniverse)
 
 
 library(GOstats)
+params <- new("GOHyperGParams", geneIds=DEgenes, universeGeneIds=geneUniverse,
+            annotation="org.Hs.eg.db", ontology="BP",
+            pvalueCutoff=0.05, testDirection="over")
+```
+
+In GO analysis, GO terms can sometime overlap. Therefore, a conditional test was chosen. The number of significant GO terms identified was .......
+```{r}
+conditional(params) <- TRUE
+hgOverCond <- hyperGTest(params)
+hgOverCond
+
+goresults <- summary(hgOverCond)
+head(goresults)
+```
+
+Since signficiantly enriched gene sets formed by a few genes are not very reliable, a filter was added so those sets with less than or equal to 3 genes were removed. The table was than ordered by Odds Ratio. If the Odds Ratio has "Inf", this indicates that all genes within a gene set are differentially expressed.
+
+```{r}
+goresults <- goresults[goresults$Size >= 3 & goresults$Count >= 3, ]
+goresults <- goresults[order(goresults$OddsRatio, decreasing=TRUE), ]
+head(goresults)
+```
+
+
+## Without SVA (Method 2)
+First, the DEgenes gathered from the differential expression analysis without sva are loaded.
+```{r}
+DEgenes <- readRDS(file.path("results", "DEgenes_noSVA.rds"))
+```
+
+### Gene set enrichment analysis (GSEA)
+
+### Gene set variation analysis (GSVA)
+
+### Gene ontology analysis
+
+### Gene Ontology Analysis
+```{r}
+geneUniverse <- rownames(se.filt)
+length(geneUniverse)
+
+
+
 params <- new("GOHyperGParams", geneIds=DEgenes, universeGeneIds=geneUniverse,
             annotation="org.Hs.eg.db", ontology="BP",
             pvalueCutoff=0.05, testDirection="over")
@@ -255,29 +298,59 @@ goresults <- goresults[order(goresults$OddsRatio, decreasing=TRUE), ]
 head(goresults)
 ```
 
-<!--de genes recovered are directly related to these GO terms?-->
-
-according to the professor, we want INF odds ratios after applying the filter...see what he said below
-
-Inf OR values mean occur when all gene in a gene set are differentially expressed. this the best-case scenario, the gene set is fully enriched!
-
-however, this usually happens when the gene set is formed by only one or two genes. we discussed in class, that significantly enriched gene sets formed by just a few genes, e.g.. < 5 or < 3, are not very reliable and it's better to filter them out but if you have gene sets with >= 5 genes and are fully enrich, these should point out to very clear functions being altered in your data set.
-
-## Without SVA
-
-### Gene set enrichment analysis (GSEA)
-
-### Gene set variation analysis (GSVA)
-
-### Gene ontology analysis
 
 ## Without the first SV
+First, the DEgenes gathered from the differential expression analysis without sva are loaded.
+```{r}
+DEgenes <- readRDS(file.path("results", "DEgenes_noSV1.rds"))
+```
 
 ### Gene set enrichment analysis (GSEA)
 
 ### Gene set variation analysis (GSVA)
 
 ### Gene ontology analysis
+
+```{r}
+geneUniverse <- rownames(se.filt)
+length(geneUniverse)
+
+
+
+params <- new("GOHyperGParams", geneIds=DEgenes, universeGeneIds=geneUniverse,
+            annotation="org.Hs.eg.db", ontology="BP",
+            pvalueCutoff=0.05, testDirection="over")
+
+hgOver <- hyperGTest(params)
+hgOver
+```
+
+compare regular test to conditinal
+use one with less
+
+```{r}
+conditional(params) <- TRUE
+hgOverCond <- hyperGTest(params)
+hgOverCond
+
+goresults <- summary(hgOverCond)
+head(goresults)
+```
+
+provide filtering here
+
+```{r}
+goresults <- goresults[goresults$Size >= 3 & goresults$Size <= 300 & goresults$Count >= 3, ]
+goresults <- goresults[order(goresults$OddsRatio, decreasing=TRUE), ]
+head(goresults)
+```
+
+
+
+
+
+
+
 
 ## Session information
 
