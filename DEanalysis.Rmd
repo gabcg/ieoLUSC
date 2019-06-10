@@ -32,13 +32,13 @@ dge.filt <- readRDS(file.path("results", "dge.paired.filt.rds"))
 
 ## Differential expression using limma-voom and SVA
 
-A differential expression analysis is performed using the [limma](http://bioconductor.org/packages/release/bioc/html/limma.html) and [sva](http://bioconductor.org/packages/sva.html) R/Bioconductor packages.
+Differential expression analysis consists of identifying changes in gene expression. For RNAseq experiments, this means comparing relative concentrations of RNA molecules. In R, this can be done by using the [limma](http://bioconductor.org/packages/release/bioc/html/limma.html) and [sva](http://bioconductor.org/packages/sva.html) R/Bioconductor packages. 
 
-To use this method, two model matrices are generated: a matrix of the model including the outcome of interest and adjustment variables, and a matrix of the null model that only includes adjustment variables. The outcome of interest is the type of sample, and as the analysis is paired (both types of samples come from the same patient) a unique identifier of each patient is included. Finally, as there are not known factors to adjust, an intercept term of 1 is given to the null model.
+#### Analysis
 
-Even if no known sources of variation were found, surrogate variables representing unknown sources of variation can be added to the model. Those can be estimated with the `sva` package, and later be appended to the model.
+`limma` allows for linear model analysis of data for DE. This requires building two model matrices: a matrix of the model including the outcome of interest and adjustment variables, and a matrix of the null model that only includes adjustment variables. The outcome of interest is the type of sample (tumor vs normal), and as both types of samples come from the same patient the analysis is paired, so a unique identifier for each patient is included. Finally, as there are unknown factors to adjust, an intercept term of 1 is given to the null model.
 
-Finally, `voom` is used to fit the model, and the moderated t-statistics are calculated.
+Even if no known sources of variation were found, surrogate variables representing unknown sources of variation can be added to the model. Those can be estimated with the `sva` package, and later be appended to the model. Finally, `voom` is used to fit the model as the library size distribution is not uniform across samples, and the moderated t-statistics are calculated. 
 
 ```{r mean-variance-SVA, message=FALSE, out.width="800px", fig.cap="Mean-variance plot for DE analysis with SVA."}
 library(sva)
@@ -66,17 +66,19 @@ fit <- lmFit(v, mod) # Fit the model with the voom weights
 fit <- eBayes(fit) # Calculate moderated t-statistics
 ```
 
-`sva` was able to estimate `r sv$n.sv` surrogate variables. Regarding the mean-variance plot shown in Figure \@ref{fig:mean-variance-SVA}, which was obtained with `voom`, it shows the variance in the y axis and the mean of expression in the x axis for each gene, represented as a black dot. Such plots contain a red curve that is fitted to the dots and show trends in the data. Normally increases in expression levels mean a decrease in the variance, until a plateau is reached for highly expressed genes. This trens is observed in the plot obtained for this data. Moreover, the plot is also a diagnosis of filtering steps performed upstream. The fact that there is not a drop in variance for the lower expression values indicates that the filtering threshold was good.
+`sva` was able to estimate `r sv$n.sv` surrogate variables. Regarding the mean-variance plot shown in Figure \@ref(fig:mean-variance-SVA), which was obtained with `voom`, it shows the variance in the y axis and the mean of expression in the x axis for each gene, represented as a black dot. Such plots contain a red curve that is fitted to the dots and show trends in the data. Normally increases in expression levels mean a decrease in the variance, until a plateau is reached for highly expressed genes. This trend is observed in the plot obtained for this data. Moreover, the plot is also a diagnosis of filtering steps performed upstream. The fact that there is not a drop in variance for the lower expression values indicates that the filtering threshold was good.
 
 <!--Info about voom plot from https://f1000research.com/articles/5-1408, https://genomebiology.biomedcentral.com/articles/10.1186/gb-2014-15-2-r29 and https://stats.stackexchange.com/questions/160255/voom-mean-variance-trend-plot-how-to-interpret-the-plot-->
 
-As we are performing multiple tests, the probability of type I errors (rejecting the null hypotheses when it is true). There are multiple statistical tools to decrease this errors, such as the false discovery rate (FDR). This technique consists on defining an acceptable rate of type I errors (false discoveries). Here, a FDR of 0.1 is set, which means that 1% of the rejections of the null hypothesis will be incorrect.
+As we are performing multiple tests, the probability of type I errors (rejecting the null hypotheses when it is true) increases. There are multiple statistical strategies to decrease the likelihood of these errors, such as the false discovery rate (FDR). This technique consists of defining an acceptable rate of type I errors (false discoveries). Here, a FDR of 0.1 is set, which means that 10% of the rejections of the null hypothesis will be incorrect. For example, if the data set has 11872 observations, up to 1187 genes can be false positives (FP).
 
 ```{r}
 FDRcutoff <- 0.1
 res <- decideTests(fit, p.value = FDRcutoff)
 summary(res)
 ```
+
+The summary table displays the upregulated, not significant, and downregulated genes for each variable in the model.
 
 Gene metadata such as the gene symbol and the chromosome can be added for an easier interpretation of the obtained statistics, and to observe the chromosome distribution of the differentially expressed genes.
 
@@ -97,11 +99,11 @@ DEgenes <- rownames(tt)[tt$adj.P.Val < FDRcutoff]
 length(DEgenes)
 ```
 
-The differential expression analysis results in `r length(rownames(tt)[tt$adj.P.Val < FDRcutoff])` differentially expressed genes.
+The differential expression analysis results in `r length(rownames(tt)[tt$adj.P.Val < FDRcutoff])` differentially expressed genes. As there are not DE genes, the chromosome distribution cannot be done.
 
 #### Diagnostics
 
-The distribution of raw p-values and the QQ plot moderated t-statistics, displayed in Figure \@ref{fig:pvalues-SVA}, can be used as a diagnosis of the tests performed.
+The distribution of raw p-values and the QQ plot moderated t-statistics, displayed in Figure \@ref(fig:pvalues-SVA), can be used as a diagnosis of the tests performed.
 
 ```{r pvalues-SVA, out.width="800px", fig.cap="Raw p-values distribution and QQ plot of the moderated t-statistics for DE analysis with SVA."}
 par(mfrow = c(1, 2), mar = c(4, 5, 2, 2))
@@ -110,9 +112,9 @@ qqt(fit$t[, 2], df = fit$df.prior + fit$df.residual, main = "", pch = ".", cex =
 abline(0, 1, lwd = 2)
 ```
 
-Under the null hypothesis, which is that most genes are not differentially expressed, the raw p-value distribution should be uniform with a peak at low p-values for the truly DE genes. It is not the case.
+Under the null hypothesis, which is that most genes are not differentially expressed, the raw p-value distribution should be uniform with a peak at low p-values for the truly DE genes. It is not the case. <!--TODO: intepret raw plot-->
 
-Regarding the second plot, it represents the quantiles of our data sample against the theoretical distribution they should follow. The diagonal represents the null hypothesis. Most genes are off-diagonal, indicating that differentially expressed genes exist, but they are still close to it because they are not significant.
+Regarding the QQ plot, it represents the quantiles of our data sample against the theoretical distribution they should follow. The diagonal represents the null hypothesis. Most genes are off-diagonal, indicating that differentially expressed genes exist, but they are still close to the diagonal because they are not significant.
 
 ## Alternative differential expression analysis approaches
 
@@ -139,12 +141,12 @@ fit <- lmFit(v, mod) # Fit the model with the voom weights
 fit <- eBayes(fit) # Calculate moderated t-statistics
 ```
 
-`sva` was able to estimate `r sv$n.sv` surrogate variables. There are not relevant variations in the mean-variance plot, shown in Figure \@ref{fig:mean-variance-noSVA}
+`sva` was able to estimate `r sv$n.sv` surrogate variables. There are not relevant variations in the mean-variance plot, shown in Figure \@ref(fig:mean-variance-noSVA)
 
-The correction for multiple testing is the same as in the previous analysis, a FDR of 0.1. After this, gene metadata is added for interpretation purposes.
+The correction for multiple testing is the same as in the previous analysis, a FDR of 0.01. After this, gene metadata is added for interpretation purposes.
 
 ```{r echo=FALSE}
-FDRcutoff <- 0.1
+FDRcutoff <- 0.01
 res <- decideTests(fit, p.value = FDRcutoff)
 summary(res)
 ```
@@ -164,9 +166,10 @@ A drop on the adjusted p-values is already observed, leading to significant expr
 ```{r echo=FALSE}
 DEgenes <- rownames(tt)[tt$adj.P.Val < FDRcutoff]
 length(DEgenes)
+saveRDS(DEgenes, file.path("results", "DEgenes_noSVA.rds"))
 ```
 
-In this case, the differential expression analysis results in `r length(rownames(tt)[tt$adj.P.Val < FDRcutoff])` significant differentially expressed genes. Now, the chromosome distribution of the genes can be assessed.
+In this case, the differential expression analysis results in `r length(rownames(tt)[tt$adj.P.Val < FDRcutoff])` significant differentially expressed genes, even with a really strict FDR cutoff. In this case, the chromosome distribution of the genes can be assessed.
 
 ```{r chromosomedistr-noSVA, out.width="800px", fig.cap="Chromosome distribution of the DE genes for the analysis without SVA"}
 sort(table(tt$chr[tt$adj.P.Val < FDRcutoff]), decreasing = TRUE)
@@ -174,7 +177,7 @@ plot(sort(table(tt$chr[tt$adj.P.Val < FDRcutoff]), decreasing = TRUE))
 axis(side=1, cex.axis=0.35)
 ```
 
-The distribution is shown in Figure \@ref{chromosomedistr-noSVA}, and it is pretty variable: most differentially expressed genes are located in big chromosomes, but smaller chromosomes are sometimes located higher in the ranking from what would be expected by its size.
+The distribution is shown in Figure \@ref(fig:chromosomedistr-noSVA), and it is pretty variable: some differentially expressed genes are located in big chromosomes, but smaller chromosomes are sometimes located higher in the ranking from what would be expected by its size.
 
 A list of the top 10 differentially expressed genes can be obtained:
 
@@ -185,7 +188,7 @@ fit$genes$symbol[top]
 
 #### Diagnostics
 
-The performance of the statistical test is assessed in the \@ref{fig:pvalues-noSVA} with the distribution of raw p-values and the QQ plot moderated t-statistics.
+The performance of the statistical test is assessed in the \@ref(fig:pvalues-noSVA) with the distribution of raw p-values and the QQ plot moderated t-statistics. 
 
 ```{r pvalues-noSVA, echo=FALSE, out.width="800px", fig.cap="Raw p-values distribution and QQ plot of the moderated t-statistics for DE analysis without SVA."}
 par(mfrow = c(1, 2), mar = c(4, 5, 2, 2))
@@ -196,13 +199,12 @@ abline(0, 1, lwd = 2)
 
 The assumption of a flat distribution of raw p-values for the non-DE genes under the null hypothesis holds in this case. In the QQ plot, more genes are far from the null hypothesis, which indicates significant differential expression.
 
-The results are diagnosed with volcano and MA plots, in which the top 10 differentially expressed genes are highlighted as shown in Figure \@ref{fig:volcano-ma-noSVA}.
+The results are diagnosed with volcano and MA plots, in which the top 10 differentially expressed genes are highlighted as shown in Figure \@ref(fig:volcano-ma-noSVA). <!--TODO: expl plots-->
 
 ```{r volcano-ma-noSVA, out.width="800px", fig.cap="Volcano and MA plots for DE analysis without SVA."}
 par(mfrow = c(1, 2), mar = c(4, 5, 3, 2))
-volcanoplot(fit, coef = 2, highlight = 10, names = fit$genes$symbol, main = "Volcano")
+volcanoplot(fit, coef = 2, highlight = 10, names = fit$genes$symbol, main = "Volcano Plot")
 
-top <- order(fit$lods[, 2], decreasing = TRUE)[1:10]
 limma::plotMA(fit, coef = 2, status = rownames(fit$lods) %in% DEgenes, legend = FALSE,
 main = "MA Plot", hl.pch = 46, hl.cex = 4, bg.pch = 46, bg.cex = 3, las = 1)
 text(fit$Amean[top], fit$coef[top, 2], fit$genes$symbol[top], cex = 0.5, pos = 4)
@@ -240,12 +242,12 @@ fit <- lmFit(v, mod) # Fit the model with the voom weights
 fit <- eBayes(fit) # Calculate moderated t-statistics
 ```
 
-`sva` estimated `r sv$n.sv` surrogate variables, though `r (sv$n.sv)-1` will be used. There are not relevant variations in the mean-variance plot (Figure \@ref{fig:mean-variance-noSV1})
+`sva` estimated `r sv$n.sv` surrogate variables, though `r (sv$n.sv)-1` will be used. There are not relevant variations in the mean-variance plot (Figure \@ref(fig:mean-variance-noSV1))
 
-The correction for multiple testing is maintained to a FDR of 0.1. Some preliminary data on upregulation and downregulation is obtained and gene metadata is added for interpretation purposes.
+The correction for multiple testing is maintained to a FDR of 0.01. Some preliminary data on upregulation and downregulation is obtained and gene metadata is added for interpretation purposes.
 
 ```{r echo=FALSE}
-FDRcutoff <- 0.1
+FDRcutoff <- 0.01
 res <- decideTests(fit, p.value = FDRcutoff)
 summary(res)
 ```
@@ -265,6 +267,7 @@ As in the study without surrogate variables, a drop on the adjusted p-values is 
 ```{r echo=FALSE}
 DEgenes <- rownames(tt)[tt$adj.P.Val < FDRcutoff]
 length(DEgenes)
+saveRDS(DEgenes, file.path("results", "DEgenes_noSV1.rds"))
 ```
 
 So the differential expression analysis without the first surrogate variable results in `r length(rownames(tt)[tt$adj.P.Val < FDRcutoff])` differentially expressed genes. Their chromosome distribution can be assessed.
@@ -275,7 +278,7 @@ plot(sort(table(tt$chr[tt$adj.P.Val < FDRcutoff]), decreasing = TRUE))
 axis(side=1, cex.axis=0.35)
 ```
 
-This result also ressembles the analysis without surrogate variables, with a variable distribution in which big chromosomes rank higher, as well as some smaller chromosomes. This can be seen in Figure \@ref{chromosomedistr-noSV1}
+This result also ressembles the analysis without surrogate variables, with a variable distribution in which big chromosomes rank higher, as well as some smaller chromosomes. This can be seen in Figure \@ref(fig:chromosomedistr-noSV1)
 
 A list of the top 10 differentially expressed genes can be obtained:
 
@@ -284,11 +287,11 @@ top <- order(fit$lods[, 2], decreasing = TRUE)[1:10]
 fit$genes$symbol[top]
 ```
 
-It can be observed that the genes in the list have changed.
+It can be observed that the genes in the list have changed. We will further analyse this in the functional enrichment section.
 
 #### Diagnostics
 
-The performance of the statistical test is diagnosed with the distributions of raw p-values and moderated t-statistics, as shown in Figure \@ref{fig:pvalues-noSV1}.
+The performance of the statistical test is diagnosed with the distributions of raw p-values and moderated t-statistics, as shown in Figure \@ref(fig:pvalues-noSV1).
 
 ```{r pvalues-noSV1, echo=FALSE, out.width="800px", fig.cap="Raw p-values distribution and QQ plot of the moderated t-statistics for DE analysis without SV1."}
 par(mfrow = c(1, 2), mar = c(4, 5, 2, 2))
@@ -297,7 +300,7 @@ qqt(fit$t[, 2], df = fit$df.prior + fit$df.residual, main = "", pch = ".", cex =
 abline(0, 1, lwd = 2)
 ```
 
-The result is, again, similar to the previous analysis. The flat distribution for non-DE genes is present, but the peak is higher, as there are more differentially expressed genes. The QQ plot is similar.
+The result is, again, similar to the previous analysis. The flat distribution for non-DE genes is present, but the peak is higher, as there are more differentially expressed genes. The QQ plot is similar to the in the analysis without SVA.
 
 The results are diagnosed with volcano and MA plots, in which the top 10 differentially expressed genes are highlighted, shown in Figure \@ref{fig:volcanoplot-noSV1}.
 
