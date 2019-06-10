@@ -188,7 +188,7 @@ All the gene sets that were differentally expressed were used in another differe
 fit <- lmFit(v, mod)
 fit <- eBayes(fit)
 
-FDRcutoff <- 0.1
+FDRcutoff <- 0.01
 res <- decideTests(fit, p.value = FDRcutoff)
 summary(res)
 
@@ -215,7 +215,9 @@ volcanoplot(fit, coef = 2, highlight = 10, names = fit$genes$symbol, main = "Mod
 top10 <- order(fit$lods[, 2], decreasing = TRUE)[1:10]
 ```
 
-### Gene ontology analysis
+### Gene Ontology Analysis
+
+
 
 bp = biological process = default setting
 
