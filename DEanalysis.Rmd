@@ -48,13 +48,10 @@ samplevial <- substr(colnames(se.filt), 14, 16)
 
 # Build the model (mod) and null (mod0) matrices 
 mod <- model.matrix(~type + patientid, data = colData(se.filt))
-mod0 <- model.matrix(~1, data = colData(se.filt))
+mod0 <- model.matrix(~patientid, data = colData(se.filt))
 
 # Estimate surrogate variables
 sv <- sva(assays(se.filt)$logCPM, mod = mod, mod0 = mod0)
-
-#pv <- f.pvalue(assays(se.filt)$logCPM, mod, mod0)
-#sum(p.adjust(pv, method="fdr") < 0.01)
 
 # Add surrogates to the design matrix
 len <- length(colnames(mod))
@@ -73,7 +70,7 @@ fit <- eBayes(fit) # Calculate moderated t-statistics
 As we are performing multiple tests, the probability of type I errors (rejecting the null hypotheses when it is true) increases. There are multiple statistical strategies to decrease the likelihood of these errors, such as the false discovery rate (FDR). This technique consists of defining an acceptable rate of type I errors (false discoveries). Here, a FDR of 0.1 is set, which means that 10% of the rejections of the null hypothesis will be incorrect. For example, if the data set has 11872 observations, up to 1187 genes can be false positives (FP).
 
 ```{r}
-FDRcutoff <- 0.1
+FDRcutoff <- 0.01
 res <- decideTests(fit, p.value = FDRcutoff)
 summary(res)
 ```
@@ -129,11 +126,10 @@ The first analysis will consist on the removal of the surrogate variable estimat
 ```{r mean-variance-noSVA, message=FALSE, out.width="800px", fig.cap="Mean-variance plot for DE analysis without SVA."}
 # Obtain the patient ID, as the analysis is paired
 patientid <- substr(colnames(se.filt), 9, 12)
-samplevial <- substr(colnames(se.filt), 14, 16)
 
 # Build the model (mod) and null (mod0) matrices 
 mod <- model.matrix(~type + patientid, data = colData(se.filt))
-mod0 <- model.matrix(~1, data = colData(se.filt))
+mod0 <- model.matrix(~patientid, data = colData(se.filt))
 
 v <- voom(dge.filt, mod, plot=TRUE)
 
@@ -212,7 +208,7 @@ text(fit$Amean[top], fit$coef[top, 2], fit$genes$symbol[top], cex = 0.5, pos = 4
 ```
 
 ### Differential expression analysis removing the first surrogate variable
-
+de
 The removal of all the surrogate variables might be considered radical, as some of them might be capturing part of the unwanted non-biological variation. It is possible that only one of the variables is capturing the relevant biological information. By removing each of them one at a time, it was observed that the variable responsible for this was the first one, so the following analysis is performed by removing it. The others can be done by simply modifying the number on the `svmod <- sv$sv[,-1]` line.
 
 #### Analysis
@@ -225,7 +221,7 @@ samplevial <- substr(colnames(se.filt), 14, 16)
 
 # Build the model (mod) and null (mod0) matrices 
 mod <- model.matrix(~type + patientid, data = colData(se.filt))
-mod0 <- model.matrix(~1, data = colData(se.filt))
+mod0 <- model.matrix(~patientid, data = colData(se.filt))
 
 # Estimate surrogate variables
 sv <- sva(assays(se.filt)$logCPM, mod = mod, mod0 = mod0)
