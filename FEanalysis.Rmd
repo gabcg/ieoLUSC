@@ -40,14 +40,6 @@ DEgenes.noSVA <- readRDS(file.path("results", "DEgenes_noSVA.rds"))
 DEgenes.noSV1 <- readRDS(file.path("results", "DEgenes_noSV1.rds"))
 ```
 
-# Functional enrichment analysis
-
-Three seperate methods will be used in these analyses: with and without SVA, and also without the first SV.
-
-
-
-
-
 ## Functional enrichmentc analysis with surogate variable adjustment
 
 ### Gene set enrichment analysis (GSEA)
@@ -97,7 +89,7 @@ This leaves `r dim(dge.filt)[1]` genes to be analyzed among `r dim(dge.filt)[2]`
 ```{r}
 patientid <- substr(colnames(se.filt), 9, 12)
 mod <- model.matrix(~type + patientid, data = colData(se.filt))
-mod0 <- model.matrix(~1, data = colData(se.filt))
+mod0 <- model.matrix(~ patientid, data = colData(se.filt))
 sv <- sva(assays(se.filt)$logCPM, mod, mod0)
 
 # Add surrogates to the model
@@ -118,7 +110,7 @@ Im <- Im[rowSums(Im) >= 5, ]
 dim(Im)
 ```
 
-The t-statistics were then stored in a vector in order of the incidence matrix. The z-score was then calculated and sorted by the absolute score. As shown below, the z-scores are all quite close to 0. The highest z-score shown is around 3, indicating this gene set is about 3 standard deviations above the mean. A low z-score suggests the genes in the gene set are not differentially expressed. 
+The t-statistics were then stored in a vector in order of the incidence matrix. The z-score was then calculated and sorted by the absolute score. As shown below, the z-scores are all quite close to 0. The highest z-score shown is around 27, indicating this gene set is about 27 units above the mean. A low z-score suggests the genes in the gene set are not differentially expressed. 
 
 ```{r}
 tGSgenes <- tt[match(colnames(Im), rownames(tt)), "t"]
@@ -148,7 +140,7 @@ As shown, `r length(DEgs)` gene sets were differentially expressed.
 
 ### Gene set variation analysis (GSVA)
 
-Since the GSEA showed no gene set were differentially expressed, a gene set variation analysis (GSVA) was performed. This differs from the standard GSEA by utilizing a gene set by sample matrix rather than a gene by sample matrix. This difference allows for the pathway enrichment for each individual sample to be analyzed.
+In addition to the GSEA, a gene set variation analysis (GSVA) was performed. This differs from the standard GSEA by utilizing a gene set by sample matrix rather than a gene by sample matrix. This difference allows for the pathway enrichment for each individual sample to be analyzed.
 
 In order to do this, a matrix is created with the number of gene sets and an enrichment score that indicates sample-wise gene-level summaries of expression. Since gene sets with a small amount of genes don't provide much information, a filter was set to remove those gene sets with 5 or less genes.
 
@@ -162,7 +154,7 @@ The enrichment scores are used for gene expression values in the differential an
 
 ```{r}
 mod <- model.matrix(~se.filt$type + patientid, data = colData(se.filt))
-mod0 <- model.matrix(~1, data = colData(se.filt))
+mod0 <- model.matrix(~ patientid, data = colData(se.filt))
 svaobj <- sva(GSexpr, mod, mod0)
 
 modSVs <- cbind(mod, svaobj$sv)
@@ -187,10 +179,9 @@ points(posx, posy, pch=".", cex=5, col="red")
 
 ### Gene Ontology Analysis
 
-The next step was to complete a gene ontology analysis. This procedure was completed to see if any differentially expressed genes exist among the differentially expressed gene sets and if these genes are associated with certain biological processes defined by the Gene Ontology system. 
+The next step was to complete a gene ontology analysis. This procedure was completed to see if any differentially expressed genes are associated with certain biological processes defined by the Gene Ontology system. 
 
-First, a differential expression analysis was conducted among the differentially expressed gene sets found in the previous section. Below, the genes showing the highest t-value across all gene sets.
-
+<!--
 ```{r}
 ####
 fit <- lmFit(v, mod)
@@ -205,17 +196,19 @@ fit$genes <- genesmd
 tt <- topTable(fit, coef = 2, n = Inf)
 head(tt, n = 10)
 ```
-
 ```{r}
 DEgenes <- rownames(tt)[tt$adj.P.Val < FDRcutoff]
 length(DEgenes)
 saveRDS(DEgenes, file.path("results", "DEgenes.rds"))
 par(mfrow = c(1, 2), mar = c(4, 5, 2, 2))
 ```
+-->
 
-A total of `r length(DEgenes)` genes among the differentialy expresse gene sets were found to be differentially expressed.
+```{r}
+DEgenes <- readRDS(file.path("results", "DEgenes_noSV1.rds"))
+```
 
-Next, a parameter object was built that specified the gene universe of interest, the set of DE genes, the ontology, and other information. The ontology selected was "BP", which matches genes to the Biological Processes associated with the GO Terms.
+First, a parameter object was built that specified the gene universe of interest, the set of `r length(DEgenes)` DE genes, the ontology, and other information. The ontology selected was "BP", which matches genes to the Biological Processes associated with the GO Terms.
 
 ```{r}
 geneUniverse <- rownames(se.filt)
@@ -249,13 +242,13 @@ head(goresults)
 
 
 
-## Without SVA (Method 2)
+<!--## Without SVA (Method 2)
 
 ### Gene set enrichment analysis (GSEA)
 
 ### Gene set variation analysis (GSVA)
 
-### Gene ontology analysis
+### Gene ontology analysis -->
 
 ### Gene Ontology Analysis
 ```{r}
@@ -291,7 +284,7 @@ head(goresults)
 ```
 
 
-## Without the first SV
+<!--## Without the first SV
 
 ### Gene set enrichment analysis (GSEA)
 
@@ -332,7 +325,7 @@ goresults <- goresults[goresults$Size >= 3 & goresults$Size <= 300 & goresults$C
 goresults <- goresults[order(goresults$OddsRatio, decreasing=TRUE), ]
 head(goresults)
 ```
-
+-->
 
 
 
