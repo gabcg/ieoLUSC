@@ -35,19 +35,26 @@ se.filt.unnorm <- readRDS(file.path("results", "se.paired.filt.unnorm.rds"))
 dge.filt.unnorm <- readRDS(file.path("results", "dge.paired.filt.unnorm.rds"))
 se.filt <- readRDS(file.path("results", "se.paired.filt.rds"))
 dge.filt <- readRDS(file.path("results", "dge.paired.filt.rds"))
+
+DEgenes.noSVA <- readRDS(file.path("results", "DEgenes_noSVA.rds"))
+DEgenes.noSV1 <- readRDS(file.path("results", "DEgenes_noSV1.rds"))
 ```
 
 # Functional enrichment analysis
 
-We will perform this three times: with and without SVA, and also without the first SV
+Three seperate methods will be used in these analyses: with and without SVA, and also without the first SV.
 
-## With SVA
+
+
+
+
+## Functional enrichmentc analysis with surogate variable adjustment
 
 ### Gene set enrichment analysis (GSEA)
 
-Since no differentially expressed genes where identified in the previous section, a gene set enrichment analysis (GSEA) was completed. This procedure provides more sensitivity in identifying gene expression changes. This analysis assesses how genes are behaving differently between two phenotypic states. The phenotypic states in this study are tumor and normal samples. The analysis calculates an enrichment score for each gene set. This score provides information on the changes in gene expression by inidividual genes in the gene set. 
+Since no differentially expressed genes where identified by adjusting surrogate variables in the differential expression analysis, a gene set enrichment analysis (GSEA) was completed. This procedure provides more sensitivity in identifying gene expression changes. This analysis assesses how genes are behaving differently between two phenotypic states. The phenotypic states in this study are tumor and normal samples. The analysis calculates an enrichment score for each gene set. This score provides information on the changes in gene expression by inidividual genes in the gene set. 
 
-The first step in running a GSEA was to select a collection of gene sets from the MSigDB gene set collections provided by the Broad Institute. The C4 collection contains 848 computational gene sets made up of cancer-oriented microarray data. (i can write more if we choose to keep this colelction for our analyses)
+The first step in running a GSEA was to select a collection of gene sets from the MSigDB gene set collections provided by the Broad Institute. The C4 collection contains 858 computational gene sets made up of cancer-oriented microarray data. (i can write more if we choose to keep this colelction for our analyses) <!--TODO definition of gene set-->
 
 ```{r}
 library(GSEABase)
@@ -56,10 +63,10 @@ geneUniverse <- rownames(se.filt)
 length(geneUniverse)
 
 c4 <- getGmt("c4.all.v6.2.entrez.gmt")
-c4
+length(c4)
 ```
 
-After the collection was selected for the GSEA, the next step was to map the identifiers from the `r length(c4)` genes from the gene set to the dataset being analyzed.
+After the collection was selected for the GSEA, the next step was to map the identifiers from the `r length(c4)` C4 gene sets to the dataset being analyzed.
 
 ```{r}
 gsc <- GeneSetCollection(c(c4))
@@ -68,7 +75,7 @@ gsc <- mapIdentifiers(gsc, AnnoOrEntrezIdentifier(metadata(se.filt)$annotation))
 gsc
 ```
 
-Next, a matrix was created to check if the idenitifers were properly mapped. The incidence matrix below inidcates what genes belong to the data collection and the data set being analyzed. A "1" denotes that the gene is a member of that data set, while a "0" denotes that the gene is not a part of that data set.
+Next, a matrix was created to check if the identifiers were properly mapped. The incidence matrix below indicates what genes belong to the data collection and the data set being analyzed. A "1" denotes that the gene is a member of that data set, while a "0" denotes that the gene is not a part of that data set. <!---TODO explain what mapping means--->
 
 ```{r}
 Im <- incidence(gsc)
@@ -78,43 +85,40 @@ Im <- Im[, colnames(Im) %in% rownames(se.filt)]
 dim(Im)
 ```
 
-Since we are only interested in the genes from the data set being analyzed, all genes that are not a part of this gene set, denoted by a "0", are discarded. This leaves 5663 genes to be analyzed among 102 gene sets from the collection. (correct?)
+Since we are only interested in the genes from the data set being analyzed, all genes that are not a part of this gene set, denoted by a "0", are discarded.  
 
 ```{r}
 se.filt <- se.filt[colnames(Im), ]
-dim(se.filt)
 dge.filt <- dge.filt[colnames(Im), ]
-dim(dge.filt)
 ```
 
-With the data ready, the same SVA procedure was completed without calling any gene differentially expressed.
+This leaves `r dim(dge.filt)[1]` genes to be analyzed among `r dim(dge.filt)[2]` gene sets from the collection. With the data ready, a SVA was completed without calling any gene differentially expressed. The mean-variance will be the same from the previous differential expression analysis so the plot is not displayed.
 
 ```{r}
 patientid <- substr(colnames(se.filt), 9, 12)
-samplevial <- substr(colnames(se.filt), 14, 16)
 mod <- model.matrix(~type + patientid, data = colData(se.filt))
 mod0 <- model.matrix(~1, data = colData(se.filt))
 sv <- sva(assays(se.filt)$logCPM, mod, mod0)
-#pv <- f.pvalue(assays(se.filt)$logCPM, mod, mod0)
-#sum(p.adjust(pv, method="fdr") < 0.01)
+
 # Add surrogates to the model
 len <- length(colnames(mod))
 mod <- cbind(mod, sv$sv)
 colnames(mod) <- c(colnames(mod)[1:len], paste0("SV", 1:sv$n))
-v <- voom(dge.filt, mod, plot=TRUE)
+
+v <- voom(dge.filt, mod)
 fit <- lmFit(v, mod)
 fit <- eBayes(fit)
 tt <- topTable(fit, coef = 2, n = Inf)
 ```
 
-With the t-statistics avaialble, the z-scores were then calculated to see if a shift in gene expression within a gene set was present. A filter was set that required the gene sets to have a minimum size of 5 genes.
+With the t-statistics avaialble, the z-scores were then calculated to see if a shift in gene expression within a gene set was present. First, a filter was set that required the gene sets to have a minimum size of 5 genes.
 
 ```{r}
 Im <- Im[rowSums(Im) >= 5, ]
 dim(Im)
 ```
 
-The t-statistics were then stored in a vector in order of the incidence matrix. The z-score was then calculated and sorted by absolute score. As shown below, the z-scores are all quite close to 0. The highest z-score shown is around 3, indicating this gene set is about 3 standard deviations above the mean. A low z-score suggests the genes in the gene set are not differentially expressed. (not sure if this last sentence is correct)
+The t-statistics were then stored in a vector in order of the incidence matrix. The z-score was then calculated and sorted by the absolute score. As shown below, the z-scores are all quite close to 0. The highest z-score shown is around 3, indicating this gene set is about 3 standard deviations above the mean. A low z-score suggests the genes in the gene set are not differentially expressed. 
 
 ```{r}
 tGSgenes <- tt[match(colnames(Im), rownames(tt)), "t"]
@@ -131,7 +135,7 @@ rnkGS <- sort(abs(zS), decreasing = TRUE)
 head(rnkGS)
 ```
 
-A one sample z-test was calculated and a conservative multiple testing adjustment was administered to see if any gene sets were candidates for differentally expressed genes. The reason for completeing a multiple testing adjustment was due to gene set overlaps. As shown below, no gene sets were differentially expressed.
+A one sample z-test was calculated and a conservative multiple testing adjustment was administered to see if any gene sets were candidates for differentially expressed genes. The reason for completing a multiple testing adjustment was due to gene set overlaps. 
 
 ```{r}
 pv <- pmin(pnorm(zS), 1 - pnorm(zS))
@@ -140,11 +144,13 @@ DEgs <- names(pvadj)[which(pvadj < 0.01)]
 length(DEgs)
 ```
 
+As shown, `r length(DEgs)` gene sets were differentially expressed.
+
 ### Gene set variation analysis (GSVA)
 
-Since the GSEA showed no gene set were differentially expressed, a gene set variation analysis (GSVA) was performed. This differs from the standard GSEA, because a GSVA characterizes the underlying biological pathway activity rather than the behavior of functionally related genes. The goal is to see how the biological pathway activity compares among the two groups. 
+Since the GSEA showed no gene set were differentially expressed, a gene set variation analysis (GSVA) was performed. This differs from the standard GSEA by utilizing a gene set by sample matrix rather than a gene by sample matrix. This difference allows for the pathway enrichment for each individual sample to be analyzed.
 
-In order to do this, a matrix is created with the number of gene sets and an enrichment score that indicates sample-wise gene-level summaries of expression. A key difference here is that the matrix constructed is a gene set by sample matrix without the phenotypic classification studied previously.
+In order to do this, a matrix is created with the number of gene sets and an enrichment score that indicates sample-wise gene-level summaries of expression. Since gene sets with a small amount of genes don't provide much information, a filter was set to remove those gene sets with 5 or less genes.
 
 ```{r}
 library(GSVA)
@@ -152,7 +158,7 @@ GSexpr <- gsva(assays(se.filt)$logCPM, gsc, min.sz=5, max.sz=300, verbose=FALSE)
 dim(GSexpr)
 ```
 
-The enrichment scores are used for gene expression values in the differential analysis prodedure below. A total of 497 gene sets appear to be called differentially expressed at 1% FDR.
+The enrichment scores are used for gene expression values in the differential analysis prodedure below.
 
 ```{r}
 mod <- model.matrix(~se.filt$type + patientid, data = colData(se.filt))
@@ -169,9 +175,9 @@ DEgs <- rownames(tt[tt$adj.P.Val < 0.01, , drop = FALSE])
 length(DEgs)
 ```
 
-In the volcano plot below, the gene sets that are differentially expressed (497) are shown in red.
+The `r length(DEgs)` gene sets that are differentially expressed at 1% FDR are shown in red in Figure \@ref(fig:volcanoplot-GVSA-SVA).
 
-```{r}
+```{r volcanoplot-GVSA-SVA, echo=FALSE, out.width="800px", fig.cap="Volcano and MA plots for GVSA"}
 plot(tt$logFC, -log10(tt$P.Value), xlab="Log2 fold-change", ylab="-log10 P-value", 
      pch=".", cex=5, col=grey(0.75), cex.axis=1.2, cex.lab=1.5, las=1)
 posx <- tt[tt$adj.P.Val < 0.01, "logFC"] 
@@ -179,9 +185,11 @@ posy <- -log10(tt[tt$adj.P.Val < 0.01, "P.Value"])
 points(posx, posy, pch=".", cex=5, col="red")
 ```
 
-<!--not sure if this next section is right? this is similar to what marta did with doing the DE analysis twice-->
+### Gene Ontology Analysis
 
-All the gene sets that were differentally expressed were used in another differential expression analysis. Below, the genes showing the highest t-value are shown.
+The next step was to complete a gene ontology analysis. This procedure was completed to see if any differentially expressed genes exist among the differentially expressed gene sets and if these genes are associated with certain biological processes defined by the Gene Ontology system. 
+
+First, a differential expression analysis was conducted among the differentially expressed gene sets found in the previous section. Below, the genes showing the highest t-value across all gene sets.
 
 ```{r}
 ####
@@ -198,10 +206,6 @@ tt <- topTable(fit, coef = 2, n = Inf)
 head(tt, n = 10)
 ```
 
-Here is a list of the top 10 genes that were found to be differentally expressed across the gene sets gathered from the GSVA.
-
-A total of 4128 genes among the gene sets were found to be differentially expressed after the GVSA.
-
 ```{r}
 DEgenes <- rownames(tt)[tt$adj.P.Val < FDRcutoff]
 length(DEgenes)
@@ -209,22 +213,13 @@ saveRDS(DEgenes, file.path("results", "DEgenes.rds"))
 par(mfrow = c(1, 2), mar = c(4, 5, 2, 2))
 ```
 
-```{r}
-par(mfrow = c(1, 2), mar = c(4, 5, 3, 2))
-volcanoplot(fit, coef = 2, highlight = 10, names = fit$genes$symbol, main = "Model", xlim=c(-10, 10))
-top10 <- order(fit$lods[, 2], decreasing = TRUE)[1:10]
-```
+A total of `r length(DEgenes)` genes among the differentialy expresse gene sets were found to be differentially expressed.
 
-### Gene Ontology Analysis
-
-After finding differentially expressed genes, the next step was to complete a gene ontology analysis. This procedure was completed to see if the DE genes were associated with certain biological processes defined by the Gene Ontology system. 
-
-The first step in this process is build a parameter object specifying the gene universe of interest, the set of DE genes, the ontology, etc. The ontology selected was "BP", which matches genes to the Biological Processes associated with the GO Terms.
+Next, a parameter object was built that specified the gene universe of interest, the set of DE genes, the ontology, and other information. The ontology selected was "BP", which matches genes to the Biological Processes associated with the GO Terms.
 
 ```{r}
 geneUniverse <- rownames(se.filt)
 length(geneUniverse)
-
 
 library(GOstats)
 params <- new("GOHyperGParams", geneIds=DEgenes, universeGeneIds=geneUniverse,
@@ -232,7 +227,8 @@ params <- new("GOHyperGParams", geneIds=DEgenes, universeGeneIds=geneUniverse,
             pvalueCutoff=0.05, testDirection="over")
 ```
 
-In GO analysis, GO terms can sometime overlap. Therefore, a conditional test was chosen. The number of significant GO terms identified was .......
+In GO analysis, GO terms can sometime overlap. Therefore, a conditional test was chosen. If the Odds Ratio has "Inf", this indicates that all genes within a gene set are differentially expressed.
+
 ```{r}
 conditional(params) <- TRUE
 hgOverCond <- hyperGTest(params)
@@ -242,7 +238,7 @@ goresults <- summary(hgOverCond)
 head(goresults)
 ```
 
-Since signficiantly enriched gene sets formed by a few genes are not very reliable, a filter was added so those sets with less than or equal to 3 genes were removed. The table was than ordered by Odds Ratio. If the Odds Ratio has "Inf", this indicates that all genes within a gene set are differentially expressed.
+Since signficiantly enriched gene sets formed by a few genes are not very reliable, a filter was added so those sets with less than or equal to 3 genes were removed. The table was than ordered by Odds Ratio. 
 
 ```{r}
 goresults <- goresults[goresults$Size >= 3 & goresults$Count >= 3, ]
@@ -251,11 +247,9 @@ head(goresults)
 ```
 
 
+
+
 ## Without SVA (Method 2)
-First, the DEgenes gathered from the differential expression analysis without sva are loaded.
-```{r}
-DEgenes <- readRDS(file.path("results", "DEgenes_noSVA.rds"))
-```
 
 ### Gene set enrichment analysis (GSEA)
 
@@ -268,9 +262,7 @@ DEgenes <- readRDS(file.path("results", "DEgenes_noSVA.rds"))
 geneUniverse <- rownames(se.filt)
 length(geneUniverse)
 
-
-
-params <- new("GOHyperGParams", geneIds=DEgenes, universeGeneIds=geneUniverse,
+params <- new("GOHyperGParams", geneIds=DEgenes.noSVA, universeGeneIds=geneUniverse,
             annotation="org.Hs.eg.db", ontology="BP",
             pvalueCutoff=0.05, testDirection="over")
 
@@ -284,7 +276,7 @@ use one with less
 ```{r}
 conditional(params) <- TRUE
 hgOverCond <- hyperGTest(params)
-hgOverCond
+lhgOverCond
 
 goresults <- summary(hgOverCond)
 head(goresults)
@@ -300,10 +292,6 @@ head(goresults)
 
 
 ## Without the first SV
-First, the DEgenes gathered from the differential expression analysis without sva are loaded.
-```{r}
-DEgenes <- readRDS(file.path("results", "DEgenes_noSV1.rds"))
-```
 
 ### Gene set enrichment analysis (GSEA)
 
@@ -317,7 +305,7 @@ length(geneUniverse)
 
 
 
-params <- new("GOHyperGParams", geneIds=DEgenes, universeGeneIds=geneUniverse,
+params <- new("GOHyperGParams", geneIds=DEgenes.noSV1, universeGeneIds=geneUniverse,
             annotation="org.Hs.eg.db", ontology="BP",
             pvalueCutoff=0.05, testDirection="over")
 
