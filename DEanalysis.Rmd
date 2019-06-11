@@ -166,13 +166,19 @@ DEgenes <- rownames(tt)[tt$adj.P.Val < FDRcutoff]
 length(DEgenes)
 ```
 
+```{r}
+a <- sub( "^chr([X|Y|0-9]+.*)", "\\1", tt$chr, perl = T)
+table(sub( "(.*)_.*_.*$", "\\1A", a, perl = T))
+```
+
 In this case, the differential expression analysis results in `r length(rownames(tt)[tt$adj.P.Val < FDRcutoff])` significant differentially expressed genes. Now, the chromosome distribution of the genes can be assessed.
 
 ```{r chromosomedistr-noSVA, out.width="800px", fig.cap="Chromosome distribution of the DE genes for the analysis without SVA"}
+tt$chr <- sub( "^chr([X|Y|0-9]+.*)", "\\1", tt$chr, perl = T)
+tt$chr <- sub( "(.*)_.*_.*$", "\\1A", tt$chr, perl = T)
 sort(table(tt$chr[tt$adj.P.Val < FDRcutoff]), decreasing = TRUE)
-plot(sort(table(tt$chr[tt$adj.P.Val < FDRcutoff]), decreasing = TRUE))
-axis(side=1, cex.axis=0.35)
-```
+plot(sort(table(tt$chr[tt$adj.P.Val < FDRcutoff & !grepl(".*[A|v][1]*$", tt$chr, perl=TRUE)]), decreasing = TRUE), main = "DE chromosomes", ylab = "DE genes", xlab = "Chromosomes", cex.axis = 0.7)
+``` 
 
 The distribution is shown in Figure \@ref{chromosomedistr-noSVA}, and it is pretty variable: most differentially expressed genes are located in big chromosomes, but smaller chromosomes are sometimes located higher in the ranking from what would be expected by its size.
 
@@ -270,9 +276,10 @@ length(DEgenes)
 So the differential expression analysis without the first surrogate variable results in `r length(rownames(tt)[tt$adj.P.Val < FDRcutoff])` differentially expressed genes. Their chromosome distribution can be assessed.
 
 ```{r chromosomedistr-noSV1, echo=FALSE, out.width="800px", fig.cap="Chromosome distribution of the DE genes for the analysis without SV1"}
+tt$chr <- sub( "^chr([X|Y|0-9]+.*)", "\\1", tt$chr, perl = T)
+tt$chr <- sub( "(.*)_.*_.*$", "\\1A", tt$chr, perl = T)
 sort(table(tt$chr[tt$adj.P.Val < FDRcutoff]), decreasing = TRUE)
-plot(sort(table(tt$chr[tt$adj.P.Val < FDRcutoff]), decreasing = TRUE))
-axis(side=1, cex.axis=0.35)
+plot(sort(table(tt$chr[tt$adj.P.Val < FDRcutoff & !grepl(".*[A|v][1]*$", tt$chr, perl=TRUE)]), decreasing = TRUE), main = "DE chromosomes", ylab = "DE genes", xlab = "Chromosomes", cex.axis = 0.7)
 ```
 
 This result also ressembles the analysis without surrogate variables, with a variable distribution in which big chromosomes rank higher, as well as some smaller chromosomes. This can be seen in Figure \@ref{chromosomedistr-noSV1}
@@ -316,6 +323,11 @@ text(fit$Amean[top], fit$coef[top, 2], fit$genes$symbol[top], cex = 0.5, pos = 4
 ```{r}
 
 ```
+#subgrups
+```{r}
+table(se.filt$alcohol_consumption_per_day)
+```
+
 
 ## Session information
 
