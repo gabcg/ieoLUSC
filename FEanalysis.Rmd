@@ -75,7 +75,7 @@ gsc <- mapIdentifiers(gsc, AnnoOrEntrezIdentifier(metadata(se.filt)$annotation))
 gsc
 ```
 
-Next, a matrix was created to check if the identifiers were properly mapped. The incidence matrix below indicates what genes belong to the data collection and the data set being analyzed. A "1" denotes that the gene is a member of that data set, while a "0" denotes that the gene is not a part of that data set. <!---TODO explain what mapping means--->
+A matrix was created to check if the identifiers were properly mapped, or matched to the corresponding identifier in the dataset being analyzed. The incidence matrix below indicates what inidividual genes belong to the data collection and the data set being analyzed. A "1" denotes that the gene is a member of that data set, while a "0" denotes that the gene is not a part of that data set. 
 
 ```{r}
 Im <- incidence(gsc)
