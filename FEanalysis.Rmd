@@ -213,7 +213,7 @@ Since signficiantly enriched gene sets formed by a few genes are not very reliab
 ```{r}
 goresults <- goresults[goresults$Size >= 5 & goresults$Count >= 5, ]
 goresults <- goresults[order(goresults$OddsRatio, decreasing=TRUE), ]
-head(goresults)
+goresults
 ```
 
 ## Session information
