@@ -92,7 +92,6 @@ This table contains the relevant statistics used in the analysis, such as raw an
 ```{r}
 signDEgenes <- rownames(tt)[tt$adj.P.Val < FDRcutoff]
 length(signDEgenes)
-saveRDS(DEgenes, file.path("results", "DEgenes_significant.rds"))
 ```
 
 The differential expression analysis results in `r length(rownames(tt)[tt$adj.P.Val < FDRcutoff])` significantly differentially expressed genes. Those can still be filtered by a log fold change cutoff of 2, with the following chromosome distribution.
