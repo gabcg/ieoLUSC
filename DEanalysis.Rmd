@@ -38,7 +38,7 @@ Differential expression analysis consists of identifying changes in gene express
 
 Even if no known sources of variation were found, surrogate variables representing unknown sources of variation can be added to the model. Those can be estimated with the `sva` package, and later be appended to the model. Finally, `voom` is used to fit the model as the library size distribution is not uniform across samples, and the moderated t-statistics are calculated. 
 
-```{r mean-variance-SVA, message=FALSE, out.width="800px", fig.cap="Mean-variance plot for DE analysis with SVA."}
+```{r mean-variance, message=FALSE, out.width="800px", fig.cap="Mean-variance plot for DE analysis."}
 library(sva)
 # Obtain the patient ID, as the analysis is paired
 patientid <- substr(colnames(se.filt), 9, 12)
@@ -90,31 +90,42 @@ head(tt, n = 20)
 This table contains the relevant statistics used in the analysis, such as raw and adjusted p-values. In the case of the later ones, it can be seen some of their values are pretty low, which means that the result is not significant. The number of differentially expressed genes under the `r FDRcutoff` FDR cuttoff can be checked by applying a filter to this table.
 
 ```{r}
-DEgenes <- rownames(tt)[tt$adj.P.Val < FDRcutoff]
-length(DEgenes)
-saveRDS(DEgenes, file.path("results", "DEgenes_FDRcut.rds"))
+signDEgenes <- rownames(tt)[tt$adj.P.Val < FDRcutoff]
+length(signDEgenes)
+saveRDS(DEgenes, file.path("results", "DEgenes_significant.rds"))
 ```
 
-The differential expression analysis results in `r length(rownames(tt)[tt$adj.P.Val < FDRcutoff])`, with the following chromosome distribution.
+The differential expression analysis results in `r length(rownames(tt)[tt$adj.P.Val < FDRcutoff])` significantly differentially expressed genes. Those can still be filtered by a log fold change cutoff of 2, with the following chromosome distribution.
 
 ```{r}
 tt.sign <- tt[tt$adj.P.Val < FDRcutoff,]
-DEgenes <- rownames(tt.sign[abs(tt.sign$logFC)>2,])
+DEgenes <- rownames(tt.sign)[abs(tt.sign$logFC) > 2]
+
 length(DEgenes)
 saveRDS(DEgenes, file.path("results", "DEgenes.rds"))
 ```
 
+So we are finally calling differentially expressed to `r length(DEgenes)` genes. The chromosome distribution of those genes can be obtained. 
 
-```{r chromosomedistr, out.width="800px", fig.cap="Chromosome distribution of the DE genes for the analysis without SVA"}
+```{r chromosomedistr, out.width="800px", fig.cap="Chromosome distribution of the differentially expressed genes"}
 tt$chr <- sub( "^chr([X|Y|0-9]+.*)", "\\1", tt$chr, perl = T)
 tt$chr <- sub( "(.*)_.*_.*$", "\\1A", tt$chr, perl = T)
-sort(table(tt$chr[tt$adj.P.Val < FDRcutoff]), decreasing = TRUE)
-plot(sort(table(tt$chr[tt$adj.P.Val < FDRcutoff & !grepl(".*[A|v][1]*$", tt$chr, perl=TRUE)]), decreasing = TRUE), main = "DE chromosomes", ylab = "DE genes", xlab = "Chromosomes", cex.axis = 0.7)
+
+#sort(table(tt$chr[tt$adj.P.Val < FDRcutoff]), decreasing = TRUE)
+sort(table(tt.sign$chr[abs(tt.sign$logFC) > 2]), decreasing = TRUE)
+
+#plot(sort(table(tt$chr[tt$adj.P.Val < FDRcutoff & !grepl(".*[A|v][1]*$", tt$chr, perl=TRUE)]), decreasing = TRUE), main = "DE genes chromosome distribution", ylab = "Number of DE genes", xlab = "Chromosome", cex.axis = 0.7)
+
+plot(sort(table(tt.sign$chr[abs(tt.sign$logFC) > 2 & !grepl(".*[A|v][1]*$", tt$chr, perl=TRUE)]), decreasing = TRUE), main = "DE genes chromosome distribution", ylab = "Number of DE genes", xlab = "Chromosome", cex.axis = 0.7)
 ``` 
 
-The distribution is shown in Figure \@ref(fig:chromosomedistr), and it is pretty variable: some differentially expressed genes are located in big chromosomes, but smaller chromosomes are sometimes located higher in the ranking from what would be expected by its size.
+The distribution is shown in Figure \@ref(fig:chromosomedistr), and it does not correspond to a distribution based on the chromosome size, as some chromosomes are located higher in the ranking than what would be expected by its size. The chromosome Y does not have any differentially expressed genes.
 
-A list of the top 10 most siginifant differentially expressed genes can be obtained:
+A list of the top 10 most significant differentially expressed genes can be obtained:
+
+```{r pdist, echo=FALSE, out.width="800px", fig.cap="Distribution of raw p-values for an F-test on every gene between tumor and normal samples."}
+#hist(pv, main="", las=1)
+```
 
 ```{r}
 top <- order(fit$lods[, 2], decreasing = TRUE)[1:10]
@@ -140,9 +151,17 @@ The differential expression results are diagnosed with volcano and MA plots, in 
 
 ```{r volcano-ma-plots, out.width="800px", fig.cap="Volcano and MA plots for DE analysis without SVA."}
 par(mfrow = c(1, 2), mar = c(4, 5, 3, 2))
+
 volcanoplot(fit, coef = 2, highlight = 10, names = fit$genes$symbol, main = "Volcano Plot")
 
-limma::plotMA(fit, coef = 2, status = rownames(fit$lods) %in% DEgenes, legend = FALSE,
+plot(tt$logFC, -log10(tt$P.Value), xlab="Log2 fold-change", ylab="-log10 P-value", 
+     pch=".", cex=2, col=grey(0.75), cex.axis=1, cex.lab=1, las=1)
+
+posx <- tt[tt$adj.P.Val < 0.01, "logFC"] 
+posy <- -log10(tt[tt$adj.P.Val < 0.01, "P.Value"]) 
+points(posx, posy, pch=".", cex=2, col="black")
+
+limma::plotMA(fit, coef = 2, status = rownames(fit$lods) %in% signDEgenes, legend = FALSE,
 main = "MA Plot", hl.pch = 46, hl.cex = 4, bg.pch = 46, bg.cex = 3, las = 1)
 text(fit$Amean[top], fit$coef[top, 2], fit$genes$symbol[top], cex = 0.5, pos = 4)
 ```
