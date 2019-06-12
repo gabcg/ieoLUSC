@@ -37,7 +37,6 @@ se.filt <- readRDS(file.path("results", "se.paired.filt.rds"))
 dge.filt <- readRDS(file.path("results", "dge.paired.filt.rds"))
 
 DEgenes <- readRDS(file.path("results", "DEgenes.rds"))
-DEgenes.filt <- readRDS(file.path("results", "DEgenes_FDRcut.rds"))
 ```
 
 ## Functional enrichmentc analysis with surogate variable adjustment
@@ -54,14 +53,19 @@ library(GSEABase)
 geneUniverse <- rownames(se.filt)
 length(geneUniverse)
 
-c4 <- getGmt("c4.all.v6.2.entrez.gmt")
-length(c4)
+#c4 <- getGmt("c4.all.v6.2.entrez.gmt")
+#length(c4)
+
+library(GSVAdata) 
+data(c2BroadSets) 
+c2BroadSets
+length(c2BroadSets)
 ```
 
 After the collection was selected for the GSEA, the next step was to map the identifiers from the `r length(c4)` C4 gene sets to the dataset being analyzed.
 
 ```{r}
-gsc <- GeneSetCollection(c(c4))
+gsc <- GeneSetCollection(c(c2BroadSets))
 #map identifiers
 gsc <- mapIdentifiers(gsc, AnnoOrEntrezIdentifier(metadata(se.filt)$annotation))
 gsc
@@ -151,9 +155,6 @@ dim(GSexpr)
 ```
 
 
-
-
-
 ```{r}
 mod <- model.matrix(~se.filt$type + patientid, data = colData(se.filt))
 mod0 <- model.matrix(~ patientid, data = colData(se.filt))
@@ -182,29 +183,6 @@ points(posx, posy, pch=".", cex=5, col="red")
 ### Gene Ontology Analysis
 
 The next step was to complete a gene ontology analysis. This procedure was completed to see if any differentially expressed genes are associated with certain biological processes defined by the Gene Ontology system. 
-
-<!--
-```{r}
-####
-fit <- lmFit(v, mod)
-fit <- eBayes(fit)
-
-FDRcutoff <- 0.01
-res <- decideTests(fit, p.value = FDRcutoff)
-summary(res)
-
-genesmd <- data.frame(chr = as.character(seqnames(rowRanges(se.filt))), symbol = rowData(se.filt)[, 1], stringsAsFactors = FALSE)
-fit$genes <- genesmd
-tt <- topTable(fit, coef = 2, n = Inf)
-head(tt, n = 10)
-```
-```{r}
-DEgenes <- rownames(tt)[tt$adj.P.Val < FDRcutoff]
-length(DEgenes)
-saveRDS(DEgenes, file.path("results", "DEgenes.rds"))
-par(mfrow = c(1, 2), mar = c(4, 5, 2, 2))
-```
--->
 
 First, a parameter object was built that specified the gene universe of interest, the set of `r length(DEgenes)` DE genes, the ontology, and other information. The ontology selected was "BP", which matches genes to the Biological Processes associated with the GO Terms.
 
@@ -236,99 +214,6 @@ goresults <- goresults[goresults$Size >= 5 & goresults$Count >= 5, ]
 goresults <- goresults[order(goresults$OddsRatio, decreasing=TRUE), ]
 head(goresults)
 ```
-
-
-
-
-<!--## Without SVA (Method 2)
-
-### Gene set enrichment analysis (GSEA)
-
-### Gene set variation analysis (GSVA)
-
-### Gene ontology analysis -->
-<!--
-### Gene Ontology Analysis
-```{r}
-geneUniverse <- rownames(se.filt)
-length(geneUniverse)
-
-params <- new("GOHyperGParams", geneIds=DEgenes.filt, universeGeneIds=geneUniverse,
-            annotation="org.Hs.eg.db", ontology="BP",
-            pvalueCutoff=0.05, testDirection="over")
-
-hgOver <- hyperGTest(params)
-hgOver
-```
-
-compare regular test to conditinal
-use one with less
-
-```{r}
-conditional(params) <- TRUE
-hgOverCond <- hyperGTest(params)
-hgOverCond
-
-goresults <- summary(hgOverCond)
-head(goresults)
-```
-
-provide filtering here
-
-```{r}
-goresults <- goresults[goresults$Size >= 3  & goresults$Count >= 3, ]
-goresults <- goresults[order(goresults$OddsRatio, decreasing=TRUE), ]
-head(goresults)
-```
-
-
-<!--## Without the first SV
-
-### Gene set enrichment analysis (GSEA)
-
-### Gene set variation analysis (GSVA)
-
-### Gene ontology analysis
-
-```{r}
-geneUniverse <- rownames(se.filt)
-length(geneUniverse)
-
-
-
-params <- new("GOHyperGParams", geneIds=DEgenes.noSV1, universeGeneIds=geneUniverse,
-            annotation="org.Hs.eg.db", ontology="BP",
-            pvalueCutoff=0.05, testDirection="over")
-
-hgOver <- hyperGTest(params)
-hgOver
-```
-
-compare regular test to conditinal
-use one with less
-
-```{r}
-conditional(params) <- TRUE
-hgOverCond <- hyperGTest(params)
-hgOverCond
-
-goresults <- summary(hgOverCond)
-head(goresults)
-```
-
-provide filtering here
-
-```{r}
-goresults <- goresults[goresults$Size >= 3 & goresults$Size <= 300 & goresults$Count >= 3, ]
-goresults <- goresults[order(goresults$OddsRatio, decreasing=TRUE), ]
-head(goresults)
-```
--->
-
-
-
-
-
 
 
 ## Session information
