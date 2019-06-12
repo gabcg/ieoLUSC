@@ -15,6 +15,8 @@ library(knitr)
 library(SummarizedExperiment)
 library(edgeR)
 library(geneplotter)
+library(limma)
+library(sva)
 
 opts_chunk$set(cache=TRUE,
                cache.path="cache/file2",
@@ -33,11 +35,301 @@ se.filt.unnorm <- readRDS(file.path("results", "se.paired.filt.unnorm.rds"))
 dge.filt.unnorm <- readRDS(file.path("results", "dge.paired.filt.unnorm.rds"))
 se.filt <- readRDS(file.path("results", "se.paired.filt.rds"))
 dge.filt <- readRDS(file.path("results", "dge.paired.filt.rds"))
+
+DEgenes <- readRDS(file.path("results", "DEgenes.rds"))
+DEgenes.filt <- readRDS(file.path("results", "DEgenes_FDRcut.rds"))
 ```
 
-# Functional analysis
+## Functional enrichmentc analysis with surogate variable adjustment
 
-Here we will perform the functional analysis in the second part of the project. 
+### Gene set enrichment analysis (GSEA)
+
+In addition to identifying differential expressed genes by adjusting surrogate variables in the differential expression analysis, a gene set enrichment analysis (GSEA) was also completed. This procedure provides more sensitivity in identifying gene expression changes. This analysis assesses how genes are behaving differently between two phenotypic states. The phenotypic states in this study are tumor and normal samples. The analysis calculates an enrichment score for each gene set. This score provides information on the changes in gene expression by inidividual genes in the gene set. 
+
+The first step in running a GSEA was to select a collection of gene sets from the MSigDB gene set collections provided by the Broad Institute. The C4 collection contains 858 computational gene sets made up of cancer-oriented microarray data. (i can write more if we choose to keep this colelction for our analyses) <!--TODO definition of gene set-->
+
+```{r}
+library(GSEABase)
+
+geneUniverse <- rownames(se.filt)
+length(geneUniverse)
+
+c4 <- getGmt("c4.all.v6.2.entrez.gmt")
+length(c4)
+```
+
+After the collection was selected for the GSEA, the next step was to map the identifiers from the `r length(c4)` C4 gene sets to the dataset being analyzed.
+
+```{r}
+gsc <- GeneSetCollection(c(c4))
+#map identifiers
+gsc <- mapIdentifiers(gsc, AnnoOrEntrezIdentifier(metadata(se.filt)$annotation))
+gsc
+```
+
+A matrix was created to check if the identifiers were properly mapped, or matched to the corresponding identifier in the dataset being analyzed. 
+
+```{r}
+Im <- incidence(gsc)
+dim(Im)
+Im[1:2, 1:10]
+Im <- Im[, colnames(Im) %in% rownames(se.filt)]
+dim(Im)
+```
+
+Since we are only interested in the genes from the data set being analyzed, all genes that are not a part of this gene set, denoted by a "0", are discarded.  
+
+```{r}
+se.filt <- se.filt[colnames(Im), ]
+dge.filt <- dge.filt[colnames(Im), ]
+```
+
+This leaves `r dim(dge.filt)[1]` genes to be analyzed among `r dim(dge.filt)[2]` gene sets from the collection. With the data ready, a SVA was completed without calling any gene differentially expressed. The mean-variance will be the same from the previous differential expression analysis so the plot is not displayed.
+
+```{r}
+patientid <- substr(colnames(se.filt), 9, 12)
+mod <- model.matrix(~type + patientid, data = colData(se.filt))
+mod0 <- model.matrix(~ patientid, data = colData(se.filt))
+sv <- sva(assays(se.filt)$logCPM, mod, mod0)
+
+# Add surrogates to the model
+len <- length(colnames(mod))
+mod <- cbind(mod, sv$sv)
+colnames(mod) <- c(colnames(mod)[1:len], paste0("SV", 1:sv$n))
+
+v <- voom(dge.filt, mod)
+fit <- lmFit(v, mod)
+fit <- eBayes(fit)
+tt <- topTable(fit, coef = 2, n = Inf)
+```
+
+With the t-statistics avaialble, the z-scores were then calculated to see if a shift in gene expression within a gene set was present. First, a filter was set that required the gene sets to have a minimum size of 5 genes.
+
+```{r}
+Im <- Im[rowSums(Im) >= 5, ]
+dim(Im)
+```
+
+The t-statistics were then stored in a vector in order of the incidence matrix. The z-score was then calculated and sorted by the absolute score. As shown below, the z-scores are all quite close to 0. The highest z-score shown is around 27, indicating this gene set is about 27 units above the mean. A low z-score suggests the genes in the gene set are not differentially expressed. 
+
+```{r}
+tGSgenes <- tt[match(colnames(Im), rownames(tt)), "t"]
+length(tGSgenes)
+
+head(tGSgenes)
+
+zS <- sqrt(rowSums(Im)) * (as.vector(Im %*% tGSgenes)/rowSums(Im))
+length(zS)
+
+head(zS)
+
+rnkGS <- sort(abs(zS), decreasing = TRUE)
+head(rnkGS)
+```
+
+A one sample z-test was calculated and a conservative multiple testing adjustment was administered to see if any gene sets were candidates for differentially expressed genes. The reason for completing a multiple testing adjustment was due to gene set overlaps. 
+
+```{r}
+pv <- pmin(pnorm(zS), 1 - pnorm(zS))
+pvadj <- p.adjust(pv, method = "fdr")
+DEgs <- names(pvadj)[which(pvadj < 0.01)]
+length(DEgs)
+```
+
+As shown, `r length(DEgs)` gene sets were differentially expressed.
+
+### Gene set variation analysis (GSVA)
+
+In addition to the GSEA, a gene set variation analysis (GSVA) was performed. This differs from the standard GSEA by utilizing a gene set by sample matrix rather than a gene by sample matrix. This difference allows for the pathway enrichment for each individual sample to be analyzed.
+
+In order to do this, a matrix is created with the number of gene sets and an enrichment score that indicates sample-wise gene-level summaries of expression. Since gene sets with a small amount of genes don't provide much information, a filter was set to remove those gene sets with 5 or less genes.
+
+```{r}
+library(GSVA)
+GSexpr <- gsva(assays(se.filt)$logCPM, gsc, min.sz=5, max.sz=300, verbose=FALSE)
+dim(GSexpr)
+```
+
+
+
+
+
+```{r}
+mod <- model.matrix(~se.filt$type + patientid, data = colData(se.filt))
+mod0 <- model.matrix(~ patientid, data = colData(se.filt))
+svaobj <- sva(GSexpr, mod, mod0)
+
+modSVs <- cbind(mod, svaobj$sv)
+
+corfit <- duplicateCorrelation(GSexpr, modSVs, block = se.filt$cellline)
+fit <- lmFit(GSexpr, modSVs)
+fit <- eBayes(fit)
+tt <- topTable(fit, coef = 2, n = Inf)
+DEgs <- rownames(tt[tt$adj.P.Val < 0.01, , drop = FALSE])
+length(DEgs)
+```
+
+The `r length(DEgs)` gene sets that are differentially expressed at 1% FDR are shown in red in Figure \@ref(fig:volcanoplot-GVSA-SVA).
+
+```{r volcanoplot-GVSA-SVA, echo=FALSE, out.width="800px", fig.cap="Volcano and MA plots for GVSA"}
+plot(tt$logFC, -log10(tt$P.Value), xlab="Log2 fold-change", ylab="-log10 P-value", 
+     pch=".", cex=5, col=grey(0.75), cex.axis=1.2, cex.lab=1.5, las=1)
+posx <- tt[tt$adj.P.Val < 0.01, "logFC"] 
+posy <- -log10(tt[tt$adj.P.Val < 0.01, "P.Value"]) 
+points(posx, posy, pch=".", cex=5, col="red")
+```
+
+### Gene Ontology Analysis
+
+The next step was to complete a gene ontology analysis. This procedure was completed to see if any differentially expressed genes are associated with certain biological processes defined by the Gene Ontology system. 
+
+<!--
+```{r}
+####
+fit <- lmFit(v, mod)
+fit <- eBayes(fit)
+
+FDRcutoff <- 0.01
+res <- decideTests(fit, p.value = FDRcutoff)
+summary(res)
+
+genesmd <- data.frame(chr = as.character(seqnames(rowRanges(se.filt))), symbol = rowData(se.filt)[, 1], stringsAsFactors = FALSE)
+fit$genes <- genesmd
+tt <- topTable(fit, coef = 2, n = Inf)
+head(tt, n = 10)
+```
+```{r}
+DEgenes <- rownames(tt)[tt$adj.P.Val < FDRcutoff]
+length(DEgenes)
+saveRDS(DEgenes, file.path("results", "DEgenes.rds"))
+par(mfrow = c(1, 2), mar = c(4, 5, 2, 2))
+```
+-->
+
+First, a parameter object was built that specified the gene universe of interest, the set of `r length(DEgenes)` DE genes, the ontology, and other information. The ontology selected was "BP", which matches genes to the Biological Processes associated with the GO Terms.
+
+```{r}
+geneUniverse <- rownames(se.filt)
+length(geneUniverse)
+
+library(GOstats)
+params <- new("GOHyperGParams", geneIds=DEgenes, universeGeneIds=geneUniverse,
+            annotation="org.Hs.eg.db", ontology="BP",
+            pvalueCutoff=0.01, testDirection="over")
+```
+
+In GO analysis, GO terms can sometime overlap. Therefore, a conditional test was chosen. If the Odds Ratio has "Inf", this indicates that all genes within a gene set are differentially expressed.
+
+```{r}
+conditional(params) <- TRUE
+hgOverCond <- hyperGTest(params)
+hgOverCond
+
+goresults <- summary(hgOverCond)
+head(goresults)
+```
+
+Since signficiantly enriched gene sets formed by a few genes are not very reliable, a filter was added so those sets with less than or equal to 3 genes were removed. The table was than ordered by Odds Ratio. 
+
+```{r}
+goresults <- goresults[goresults$Size >= 5 & goresults$Count >= 5, ]
+goresults <- goresults[order(goresults$OddsRatio, decreasing=TRUE), ]
+head(goresults)
+```
+
+
+
+
+<!--## Without SVA (Method 2)
+
+### Gene set enrichment analysis (GSEA)
+
+### Gene set variation analysis (GSVA)
+
+### Gene ontology analysis -->
+<!--
+### Gene Ontology Analysis
+```{r}
+geneUniverse <- rownames(se.filt)
+length(geneUniverse)
+
+params <- new("GOHyperGParams", geneIds=DEgenes.filt, universeGeneIds=geneUniverse,
+            annotation="org.Hs.eg.db", ontology="BP",
+            pvalueCutoff=0.05, testDirection="over")
+
+hgOver <- hyperGTest(params)
+hgOver
+```
+
+compare regular test to conditinal
+use one with less
+
+```{r}
+conditional(params) <- TRUE
+hgOverCond <- hyperGTest(params)
+hgOverCond
+
+goresults <- summary(hgOverCond)
+head(goresults)
+```
+
+provide filtering here
+
+```{r}
+goresults <- goresults[goresults$Size >= 3  & goresults$Count >= 3, ]
+goresults <- goresults[order(goresults$OddsRatio, decreasing=TRUE), ]
+head(goresults)
+```
+
+
+<!--## Without the first SV
+
+### Gene set enrichment analysis (GSEA)
+
+### Gene set variation analysis (GSVA)
+
+### Gene ontology analysis
+
+```{r}
+geneUniverse <- rownames(se.filt)
+length(geneUniverse)
+
+
+
+params <- new("GOHyperGParams", geneIds=DEgenes.noSV1, universeGeneIds=geneUniverse,
+            annotation="org.Hs.eg.db", ontology="BP",
+            pvalueCutoff=0.05, testDirection="over")
+
+hgOver <- hyperGTest(params)
+hgOver
+```
+
+compare regular test to conditinal
+use one with less
+
+```{r}
+conditional(params) <- TRUE
+hgOverCond <- hyperGTest(params)
+hgOverCond
+
+goresults <- summary(hgOverCond)
+head(goresults)
+```
+
+provide filtering here
+
+```{r}
+goresults <- goresults[goresults$Size >= 3 & goresults$Size <= 300 & goresults$Count >= 3, ]
+goresults <- goresults[order(goresults$OddsRatio, decreasing=TRUE), ]
+head(goresults)
+```
+-->
+
+
+
+
+
+
 
 ## Session information
 
