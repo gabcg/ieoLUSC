@@ -391,6 +391,23 @@ legend("topright", paste("Batch", sort(unique(batch)), levels(factor(new.portion
 
 We observe that only the `8623-tumor` sample doesn't cluster with the rest of the tumor samples.
 
+Sample removal:
+
+```{r}
+
+dim(se.filt)
+dim(dge.filt)
+
+number <- as.character(8623)
+
+se.filt <- se.filt[ ,!is.element(substr(colnames(se.filt), 9, 12), number)]
+dge.filt <- DGEList(counts=assays(se.filt)$counts, genes=mcols(se.filt))
+
+dim(se.filt)
+dim(dge.filt)
+```
+
+
 ## Session information
 
 ```{r, message=FALSE}
