@@ -24,8 +24,8 @@ se <- readRDS(file.path("results", "se.paired.rds"))
 dge <- readRDS(file.path("results", "dge.paired.rds"))
 se.filt.unnorm <- readRDS(file.path("results", "se.paired.filt.unnorm.rds"))
 dge.filt.unnorm <- readRDS(file.path("results", "dge.paired.filt.unnorm.rds"))
-se.filt <- readRDS(file.path("results", "se.paired.filt.rds"))
-dge.filt <- readRDS(file.path("results", "dge.paired.filt.rds"))
+se.filt <- readRDS(file.path("results", "se.paired.filt2.rds"))
+dge.filt <- readRDS(file.path("results", "dge.paired.filt2.rds"))
 ```
 
 # Differential expression analysis
@@ -61,11 +61,11 @@ fit <- lmFit(v, mod) # Fit the model with the voom weights
 fit <- eBayes(fit) # Calculate moderated t-statistics
 ```
 
-`sva` was able to estimate `r sv$n.sv` surrogate variables. Regarding the mean-variance plot shown in Figure \@ref(fig:mean-variance-SVA), which was obtained with `voom`, it shows the variance in the y axis and the mean of expression in the x axis for each gene, represented as a black dot. Such plots contain a red curve that is fitted to the dots and show trends in the data. Normally increases in expression levels mean a decrease in the variance, until a plateau is reached for highly expressed genes. This trend is observed in the plot obtained for this data. Moreover, the plot is also a diagnosis of filtering steps performed upstream. The fact that there is not a drop in variance for the lower expression values indicates that the filtering threshold was good.
+`sva` was able to estimate `r sv$n.sv` surrogate variables. Regarding the mean-variance plot shown in Figure \@ref(fig:mean-variance), which was obtained with `voom`, it shows the variance in the y axis and the mean of expression in the x axis for each gene, represented as a black dot. Such plots contain a red curve that is fitted to the dots and show trends in the data. Normally increases in expression levels mean a decrease in the variance, until a plateau is reached for highly expressed genes. This trend is observed in the plot obtained for this data. Moreover, the plot is also a diagnosis of filtering steps performed upstream. The fact that there is not a drop in variance for the lower expression values indicates that the filtering threshold was good.
 
 <!--Info about voom plot from https://f1000research.com/articles/5-1408, https://genomebiology.biomedcentral.com/articles/10.1186/gb-2014-15-2-r29 and https://stats.stackexchange.com/questions/160255/voom-mean-variance-trend-plot-how-to-interpret-the-plot-->
 
-As we are performing multiple tests, the probability of type I errors (rejecting the null hypotheses when it is true) increases. There are multiple statistical strategies to decrease the likelihood of these errors, such as the false discovery rate (FDR). This technique consists of defining an acceptable rate of type I errors (false discoveries). Here, a FDR of 0.01 is set, which means that 1% of the rejections of the null hypothesis will be incorrect. For our data set, which has 11872 observations, up to 119 genes can be false positives (FP).
+As performing multiple tests are being performed, the probability of type I errors (rejecting the null hypotheses when it is true) increases. There are multiple statistical strategies to decrease the likelihood of these errors, such as the false discovery rate (FDR). This technique consists of defining an acceptable rate of type I errors (false discoveries). Here, a FDR of 0.01 is set, which means that 1% of the rejections of the null hypothesis will be incorrect. For this data set, which has `r dim(se.filt)[1]` observations, up to `r round(dim(se.filt)[1]*0.01)` genes can be false positives (FP).
 
 ```{r}
 FDRcutoff <- 0.01
@@ -94,7 +94,7 @@ signDEgenes <- rownames(tt)[tt$adj.P.Val < FDRcutoff]
 length(signDEgenes)
 ```
 
-The differential expression analysis results in `r length(rownames(tt)[tt$adj.P.Val < FDRcutoff])` significantly differentially expressed genes. Those can still be filtered by a log fold change cutoff of 2, with the following chromosome distribution.
+The differential expression analysis results in `r length(signDEgenes)` significantly differentially expressed genes. Those can still be filtered by a log fold change cutoff of 2 and -2, with the following chromosome distribution.
 
 ```{r}
 tt.sign <- tt[tt$adj.P.Val < FDRcutoff,]
@@ -107,6 +107,7 @@ saveRDS(DEgenes, file.path("results", "DEgenes.rds"))
 So we are finally calling differentially expressed to `r length(DEgenes)` genes. The chromosome distribution of those genes can be obtained. 
 
 ```{r chromosomedistr, out.width="800px", fig.cap="Chromosome distribution of the differentially expressed genes"}
+ttc <- tt
 tt$chr <- sub( "^chr([X|Y|0-9]+.*)", "\\1", tt$chr, perl = T)
 tt$chr <- sub( "(.*)_.*_.*$", "\\1A", tt$chr, perl = T)
 
@@ -146,19 +147,12 @@ Under the null hypothesis, which is that most genes are not differentially expre
 
 Regarding the QQ plot, it represents the quantiles of our data sample against the theoretical distribution they should follow. The diagonal represents the null hypothesis. Most genes are off-diagonal, indicating differential expression. The fact tha most of the genes are far from the null hypothesis is a measure of the significance of the results.
 
-The differential expression results are diagnosed with volcano and MA plots, in which the top 10 differentially expressed genes are highlighted as shown in Figure \@ref(fig:volcano-ma-plots). <!--TODO: expl plots-->
+The differential expression results are diagnosed with volcano and MA plots, in which the top 10 differentially expressed genes are highlighted as shown in Figure \@ref(fig:volcano-ma-plots). Volcano plots summarize a measure of significance, such as the p-values (in logarithmic scale, in this case);  <!--TODO: expl plots-->
 
 ```{r volcano-ma-plots, out.width="800px", fig.cap="Volcano and MA plots for DE analysis without SVA."}
 par(mfrow = c(1, 2), mar = c(4, 5, 3, 2))
 
 volcanoplot(fit, coef = 2, highlight = 10, names = fit$genes$symbol, main = "Volcano Plot")
-
-plot(tt$logFC, -log10(tt$P.Value), xlab="Log2 fold-change", ylab="-log10 P-value", 
-     pch=".", cex=2, col=grey(0.75), cex.axis=1, cex.lab=1, las=1)
-
-posx <- tt[tt$adj.P.Val < 0.01, "logFC"] 
-posy <- -log10(tt[tt$adj.P.Val < 0.01, "P.Value"]) 
-points(posx, posy, pch=".", cex=2, col="black")
 
 limma::plotMA(fit, coef = 2, status = rownames(fit$lods) %in% signDEgenes, legend = FALSE,
 main = "MA Plot", hl.pch = 46, hl.cex = 4, bg.pch = 46, bg.cex = 3, las = 1)

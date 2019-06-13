@@ -33,9 +33,9 @@ dge <- readRDS(file.path("results", "dge.paired.rds"))
 
 se.filt.unnorm <- readRDS(file.path("results", "se.paired.filt.unnorm.rds"))
 dge.filt.unnorm <- readRDS(file.path("results", "dge.paired.filt.unnorm.rds"))
-se.filt <- readRDS(file.path("results", "se.paired.filt.rds"))
-se.filt_go <- readRDS(file.path("results", "se.paired.filt.rds"))
-dge.filt <- readRDS(file.path("results", "dge.paired.filt.rds"))
+se.filt_go <- readRDS(file.path("results", "se.paired.filt2.rds"))
+se.filt <- readRDS(file.path("results", "se.paired.filt2.rds"))
+dge.filt <- readRDS(file.path("results", "dge.paired.filt2.rds"))
 
 DEgenes <- readRDS(file.path("results", "DEgenes.rds"))
 ```
