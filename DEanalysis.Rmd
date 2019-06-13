@@ -34,15 +34,16 @@ Differential expression analysis consists of identifying changes in gene express
 
 ## Analysis
 
-`limma` allows for linear model analysis of data for DE. This requires building two model matrices: a matrix of the model including the outcome of interest and adjustment variables, and a matrix of the null model that only includes adjustment variables. The outcome of interest is the type of sample (tumor vs normal), and as both types of samples come from the same patient the analysis is paired, so a unique identifier for each patient is included. Finally, as there are unknown factors to adjust, an intercept term of 1 is given to the null model.
+`limma` allows for linear model analysis of data for DE. This requires building two model matrices: one including the outcome of interest and adjustment variables, and a matrix of the null model that only includes the adjustment variables. The outcome of interest is the type of sample (tumor vs normal), and as both types come from the same patient the analysis is paired, so a unique identifier for each patient is included.
 
-Even if no known sources of variation were found, surrogate variables representing unknown sources of variation can be added to the model. Those can be estimated with the `sva` package, and later be appended to the model. Finally, `voom` is used to fit the model as the library size distribution is not uniform across samples, and the moderated t-statistics are calculated. 
+Even if no known sources of variation were found, surrogate variables representing unknown sources of variation can be added to the model. Those can be estimated with the `sva` package, and later be appended to the model. Finally, `voom` is used to fit the model and the moderated t-statistics are calculated. This pipeline is chosen over `limma-trend` because the library size distribution is not uniform across samples. 
 
 ```{r mean-variance, message=FALSE, out.width="800px", fig.cap="Mean-variance plot for DE analysis."}
 library(sva)
 # Obtain the patient ID, as the analysis is paired
 patientid <- substr(colnames(se.filt), 9, 12)
 samplevial <- substr(colnames(se.filt), 14, 16)
+se.filt$type <- relevel(se.filt$type, ref = "normal")
 
 # Build the model (mod) and null (mod0) matrices 
 mod <- model.matrix(~type + patientid, data = colData(se.filt))
@@ -65,7 +66,7 @@ fit <- eBayes(fit) # Calculate moderated t-statistics
 
 <!--Info about voom plot from https://f1000research.com/articles/5-1408, https://genomebiology.biomedcentral.com/articles/10.1186/gb-2014-15-2-r29 and https://stats.stackexchange.com/questions/160255/voom-mean-variance-trend-plot-how-to-interpret-the-plot-->
 
-As performing multiple tests are being performed, the probability of type I errors (rejecting the null hypotheses when it is true) increases. There are multiple statistical strategies to decrease the likelihood of these errors, such as the false discovery rate (FDR). This technique consists of defining an acceptable rate of type I errors (false discoveries). Here, a FDR of 0.01 is set, which means that 1% of the rejections of the null hypothesis will be incorrect. For this data set, which has `r dim(se.filt)[1]` observations, up to `r round(dim(se.filt)[1]*0.01)` genes can be false positives (FP).
+As multiple tests are being performed, the probability of type I errors (rejecting the null hypotheses when it is true) increases. There are multiple statistical strategies consisting of applying corrections to the p-values to decrease the likelihood of these errors, such as the false discovery rate (FDR). This technique consists of defining an acceptable rate of type I errors (false discoveries). Here, a FDR of 0.01 is set, which means that 1% of the rejections of the null hypothesis will be incorrect. For this data set, which has `r dim(se.filt)[1]` observations, up to `r round(dim(se.filt)[1]*0.01)` genes can be false positives (FP).
 
 ```{r}
 FDRcutoff <- 0.01
@@ -75,7 +76,7 @@ summary(res)
 
 The summary table displays the upregulated, not significant, and downregulated genes for each variable in the model.
 
-Gene metadata such as the gene symbol and the chromosome can be added for an easier interpretation of the obtained statistics, and to observe the chromosome distribution of the differentially expressed genes.
+Gene metadata such as the gene symbol and the chromosome can be added for an easier interpretation of the obtained statistics to the results table, which is shown below this lines.
 
 ```{r}
 # Get gene info...
@@ -87,7 +88,7 @@ tt <- topTable(fit, coef = 2, n = Inf)
 head(tt, n = 20)
 ```
 
-This table contains the relevant statistics used in the analysis, such as raw and adjusted p-values. In the case of the later ones, it can be seen some of their values are pretty low, which means that the result is not significant. The number of differentially expressed genes under the `r FDRcutoff` FDR cuttoff can be checked by applying a filter to this table.
+The results table includes relevant statistics such as raw and adjusted p-values. In the case of the later ones, it can be seen some of their values are pretty low, which means that the result is significant. The number of differentially expressed genes under the `r FDRcutoff` FDR cuttoff can be checked by applying a filter to this table.
 
 ```{r}
 signDEgenes <- rownames(tt)[tt$adj.P.Val < FDRcutoff]
@@ -98,34 +99,30 @@ The differential expression analysis results in `r length(signDEgenes)` signific
 
 ```{r}
 tt.sign <- tt[tt$adj.P.Val < FDRcutoff,]
-DEgenes <- rownames(tt.sign)[abs(tt.sign$logFC) > 2]
+DEgenes <- rownames(tt.sign)[abs(tt.sign$logFC) > 3]
 
 length(DEgenes)
 saveRDS(DEgenes, file.path("results", "DEgenes.rds"))
 ```
 
-So we are finally calling differentially expressed to `r length(DEgenes)` genes. The chromosome distribution of those genes can be obtained. 
+So we are finally calling differentially expressed to `r length(DEgenes)` genes. As we added the chromosome information to the table of results, the chromosome distribution of these genes can be obtained. 
 
 ```{r chromosomedistr, out.width="800px", fig.cap="Chromosome distribution of the differentially expressed genes"}
-ttc <- tt
-tt$chr <- sub( "^chr([X|Y|0-9]+.*)", "\\1", tt$chr, perl = T)
-tt$chr <- sub( "(.*)_.*_.*$", "\\1A", tt$chr, perl = T)
-
 #sort(table(tt$chr[tt$adj.P.Val < FDRcutoff]), decreasing = TRUE)
-sort(table(tt.sign$chr[abs(tt.sign$logFC) > 2]), decreasing = TRUE)
+sort(table(tt$chr[abs(tt$logFC) > 3]), decreasing = TRUE)
 
 #plot(sort(table(tt$chr[tt$adj.P.Val < FDRcutoff & !grepl(".*[A|v][1]*$", tt$chr, perl=TRUE)]), decreasing = TRUE), main = "DE genes chromosome distribution", ylab = "Number of DE genes", xlab = "Chromosome", cex.axis = 0.7)
 
-plot(sort(table(tt.sign$chr[abs(tt.sign$logFC) > 2 & !grepl(".*[A|v][1]*$", tt$chr, perl=TRUE)]), decreasing = TRUE), main = "DE genes chromosome distribution", ylab = "Number of DE genes", xlab = "Chromosome", cex.axis = 0.7)
+ttc <- tt.sign
+ttc$chr <- sub( "^chr([X|Y|0-9]+.*)", "\\1", ttc$chr, perl = T)
+ttc$chr <- sub( "(.*)_.*_.*$", "\\1A", ttc$chr, perl = T)
+
+plot(sort(table(ttc$chr[abs(ttc$logFC) > 2 & !grepl(".*[A|v][1]*$", ttc$chr, perl=TRUE)]), decreasing = TRUE), main = "DE genes chromosome distribution", ylab = "Number of DE genes", xlab = "Chromosome", cex.axis = 0.7)
 ``` 
 
-The distribution is shown in Figure \@ref(fig:chromosomedistr), and it does not correspond to a distribution based on the chromosome size, as some chromosomes are located higher in the ranking than what would be expected by its size. The chromosome Y does not have any differentially expressed genes.
+The distribution is shown in Figure \@ref(fig:chromosomedistr), and it does not correspond to a distribution based on the chromosome size, as some chromosomes are located higher in the ranking than what would be expected by its size. The chromosome Y does not have any differentially expressed gene.
 
-A list of the top 10 most significant differentially expressed genes can be obtained:
-
-```{r pdist, echo=FALSE, out.width="800px", fig.cap="Distribution of raw p-values for an F-test on every gene between tumor and normal samples."}
-#hist(pv, main="", las=1)
-```
+A list of the top 10 differentially expressed genes passing both thresholds can be obtained:
 
 ```{r}
 top <- order(fit$lods[, 2], decreasing = TRUE)[1:10]
@@ -145,7 +142,7 @@ abline(0, 1, lwd = 2)
 
 Under the null hypothesis, which is that most genes are not differentially expressed, the raw p-value distribution should be uniform with a peak at low p-values for the truly DE genes. This coincides with the observed plot.
 
-Regarding the QQ plot, it represents the quantiles of our data sample against the theoretical distribution they should follow. The diagonal represents the null hypothesis. Most genes are off-diagonal, indicating differential expression. The fact tha most of the genes are far from the null hypothesis is a measure of the significance of the results.
+Regarding the QQ plot, it represents the quantiles of the data sample against the theoretical distribution they should follow. The diagonal represents the null hypothesis. Most genes are off-diagonal, indicating differential expression. The fact tha most of the genes are far from the null hypothesis is a measure of the significance of the results.
 
 The differential expression results are diagnosed with volcano and MA plots, in which the top 10 differentially expressed genes are highlighted as shown in Figure \@ref(fig:volcano-ma-plots). Volcano plots summarize a measure of significance, such as the p-values (in logarithmic scale, in this case);  <!--TODO: expl plots-->
 
