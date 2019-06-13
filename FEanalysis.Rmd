@@ -212,9 +212,9 @@ head(goresults)
 Since signficiantly enriched gene sets formed by a few genes are not very reliable, a filter was added so those sets with less than or equal to 5 genes were removed. The table was than ordered by Odds Ratio. 
 
 ```{r}
-goresults_filt <- goresults[goresults$Size >= 5, ]
-goresults_filt <- goresults[order(goresults$OddsRatio, decreasing=TRUE), ]
-goresults_filt
+goresults <- goresults[goresults$Size >= 5 & goresults$Size <= 250  & goresults$OddsRatio >= 1.5, ]
+goresults <- goresults[order(goresults$OddsRatio, decreasing=TRUE), ]
+goresults
 ```
 
 ## Session information
