@@ -33,7 +33,7 @@ dge <- readRDS(file.path("results", "dge.paired.rds"))
 
 se.filt.unnorm <- readRDS(file.path("results", "se.paired.filt.unnorm.rds"))
 dge.filt.unnorm <- readRDS(file.path("results", "dge.paired.filt.unnorm.rds"))
-se.filt_go <- readRDS(file.path("results", "se.paired.filt2.rds"))
+#se.filt_go <- readRDS(file.path("results", "se.paired.filt2.rds"))
 se.filt <- readRDS(file.path("results", "se.paired.filt2.rds"))
 dge.filt <- readRDS(file.path("results", "dge.paired.filt2.rds"))
 
@@ -85,17 +85,17 @@ dim(Im)
 Since we are only interested in the genes from the data set being analyzed, all genes that were not a part of this gene set, denoted by a "0", were discarded.  
 
 ```{r}
-se.filt <- se.filt[colnames(Im), ]
-dge.filt <- dge.filt[colnames(Im), ]
+se.filtgsea <- se.filt[colnames(Im), ]
+dge.filtgsea <- dge.filt[colnames(Im), ]
 ```
 
 This left `r dim(dge.filt)[1]` genes to be analyzed among `r dim(dge.filt)[2]` gene sets from the collection. With the data ready, a SVA was completed without calling any gene differentially expressed. The mean-variance was be the same from the previous differential expression analysis so the plot was not displayed.
 
 ```{r}
-patientid <- substr(colnames(se.filt), 9, 12)
-mod <- model.matrix(~type + patientid, data = colData(se.filt))
-mod0 <- model.matrix(~ patientid, data = colData(se.filt))
-sv <- sva(assays(se.filt)$logCPM, mod, mod0)
+patientid <- substr(colnames(se.filtgsea), 9, 12)
+mod <- model.matrix(~type + patientid, data = colData(se.filtgsea))
+mod0 <- model.matrix(~ patientid, data = colData(se.filtgsea))
+sv <- sva(assays(se.filtgsea)$logCPM, mod, mod0)
 
 # Add surrogates to the model
 len <- length(colnames(mod))
@@ -189,7 +189,7 @@ The next step was to complete a gene ontology analysis. This procedure was compl
 First, a parameter object was built that specified the gene universe of interest, the set of `r length(DEgenes)` DE genes, the ontology, and other information. The ontology selected was "BP", which matched genes to the Biological Processes associated with the GO Terms.
 
 ```{r}
-geneUniverse <- rownames(se.filt_go)
+geneUniverse <- rownames(se.filt)
 length(geneUniverse)
 
 library(GOstats)
