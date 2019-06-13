@@ -34,6 +34,7 @@ dge <- readRDS(file.path("results", "dge.paired.rds"))
 se.filt.unnorm <- readRDS(file.path("results", "se.paired.filt.unnorm.rds"))
 dge.filt.unnorm <- readRDS(file.path("results", "dge.paired.filt.unnorm.rds"))
 se.filt <- readRDS(file.path("results", "se.paired.filt.rds"))
+se.filt_go <- readRDS(file.path("results", "se.paired.filt.rds"))
 dge.filt <- readRDS(file.path("results", "dge.paired.filt.rds"))
 
 DEgenes <- readRDS(file.path("results", "DEgenes.rds"))
@@ -188,7 +189,7 @@ The next step was to complete a gene ontology analysis. This procedure was compl
 First, a parameter object was built that specified the gene universe of interest, the set of `r length(DEgenes)` DE genes, the ontology, and other information. The ontology selected was "BP", which matched genes to the Biological Processes associated with the GO Terms.
 
 ```{r}
-geneUniverse <- rownames(se.filt)
+geneUniverse <- rownames(se.filt_go)
 length(geneUniverse)
 
 library(GOstats)
@@ -211,9 +212,9 @@ head(goresults)
 Since signficiantly enriched gene sets formed by a few genes are not very reliable, a filter was added so those sets with less than or equal to 5 genes were removed. The table was than ordered by Odds Ratio. 
 
 ```{r}
-goresults <- goresults[goresults$Size >= 5 & goresults$Count >= 5, ]
-goresults <- goresults[order(goresults$OddsRatio, decreasing=TRUE), ]
-head(goresults)
+goresults_filt <- goresults[goresults$Size >= 5, ]
+goresults_filt <- goresults[order(goresults$OddsRatio, decreasing=TRUE), ]
+goresults_filt
 ```
 
 ## Session information
