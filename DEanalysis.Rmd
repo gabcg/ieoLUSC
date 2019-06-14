@@ -56,7 +56,6 @@ library(limma)
 
 # Obtain the patient ID, as the analysis is paired
 patientid <- substr(colnames(se.filt), 9, 12)
-samplevial <- substr(colnames(se.filt), 14, 16)
 se.filt$type <- relevel(se.filt$type, ref = "normal")
 
 # Build the model (mod) and null (mod0) matrices 
