@@ -46,19 +46,15 @@ dge.filt <- readRDS(file.path("results", "dge.paired.gsfilt.norm.rds"))
 
 # Differentially expressed genes list
 DEgenes <- readRDS(file.path("results", "DEgenes.rds"))
-
-### TO DELETE
-
-se.filt_go <- readRDS(file.path("results", "se.paired.gsfilt.norm.rds"))
 ```
 
 # Functional enrichment analysis
 
 ## Gene set enrichment analysis (GSEA)
 
-In addition to identifying differential expressed genes by adjusting surrogate variables in the differential expression analysis, a gene set enrichment analysis (GSEA) was also completed. This procedure provides more sensitivity in identifying gene expression changes. This analysis assesses how genes are behaving differently between two phenotypic states. The phenotypic states in this study are tumor and normal samples. The analysis calculates an enrichment score for each gene set. This score provides information on the changes in gene expression by inidividual genes in the gene set. 
+In addition to identifying differential expressed genes by adjusting surrogate variables in the differential expression analysis, a gene set enrichment analysis (GSEA) was also completed. This procedure provided more sensitivity in identifying gene expression changes. This analysis assessed how genes are behaving differently between two phenotypic states. The phenotypic states in this study were tumor and normal samples. The analysis calculated an enrichment score for each gene set. This score provided information on the changes in gene expression by inidividual genes in the gene set. 
 
-The first step in running a GSEA was to select a collection of gene sets from the MSigDB gene set collections provided by the Broad Institute. The C2 collection contained 3272 computational gene sets made up of cancer-oriented microarray data.
+The first step in running a GSEA was to select a collection of gene sets from the MSigDB gene set collections provided by the Broad Institute. The C2 collection contained 3272 computational gene sets made up of cancer-oriented microarray data. This collection was well-curated and large, which made it an ideal candidate to use in the analysis.
 
 ```{r message=FALSE}
 library(GSEABase)
@@ -81,7 +77,7 @@ gsc <- mapIdentifiers(gsc, AnnoOrEntrezIdentifier(metadata(se.filt)$annotation))
 gsc
 ```
 
-A matrix was created to check if the identifiers were properly mapped, or matched to the corresponding identifier in the dataset being analyzed. 
+A matrix was created to check if the identifiers were properly mapped, or matched to the corresponding identifier in the data set being analyzed. 
 
 ```{r}
 Im <- incidence(gsc)
@@ -91,20 +87,20 @@ Im <- Im[, colnames(Im) %in% rownames(se.filt)]
 dim(Im)
 ```
 
-Since we are only interested in the genes from the data set being analyzed, all genes that were not a part of this gene set, denoted by a "0", were discarded.  
+Since the genes from the data set being analyzed are the only genes of interest, all genes that were not a part of this data set, denoted by a "0", were discarded.  
 
 ```{r}
-se.filt <- se.filt[colnames(Im), ]
-dge.filt <- dge.filt[colnames(Im), ]
+se.filtgsea <- se.filt[colnames(Im), ]
+dge.filtgsea <- dge.filt[colnames(Im), ]
 ```
 
-This left `r dim(dge.filt)[1]` genes to be analyzed among `r dim(dge.filt)[2]` gene sets from the collection. With the data ready, a SVA was completed without calling any gene differentially expressed. The mean-variance was be the same from the previous differential expression analysis so the plot was not displayed.
+This left `r dim(dge.filt)[1]` genes to be analyzed among `r dim(dge.filt)[2]` gene sets from the collection. With the data ready, a SVA was completed without calling any gene differentially expressed. The mean-variance was the same from the previous differential expression analysis so the plot was not displayed.
 
 ```{r}
-patientid <- substr(colnames(se.filt), 9, 12)
-mod <- model.matrix(~type + patientid, data = colData(se.filt))
-mod0 <- model.matrix(~patientid, data = colData(se.filt))
-sv <- sva(assays(se.filt)$logCPM, mod, mod0)
+patientid <- substr(colnames(se.filtgsea), 9, 12)
+mod <- model.matrix(~type + patientid, data = colData(se.filtgsea))
+mod0 <- model.matrix(~ patientid, data = colData(se.filtgsea))
+sv <- sva(assays(se.filtgsea)$logCPM, mod, mod0)
 
 # Add surrogates to the model
 len <- length(colnames(mod))
@@ -197,8 +193,8 @@ The next step was to complete a gene ontology analysis. This procedure was compl
 
 First, a parameter object was built that specified the gene universe of interest, the set of `r length(DEgenes)` DE genes, the ontology, and other information. The ontology selected was "BP", which matched genes to the Biological Processes associated with the GO Terms.
 
-```{r message=FALSE}
-geneUniverse <- rownames(se.filt_go)
+```{r}
+geneUniverse <- rownames(se.filt)
 length(geneUniverse)
 
 library(GOstats)
@@ -218,13 +214,14 @@ goresults <- summary(hgOverCond)
 head(goresults)
 ```
 
-Since signficiantly enriched gene sets formed by a few genes are not very reliable, a filter was added so those sets with less than or equal to 5 genes were removed. The table was than ordered by Odds Ratio. 
+Since signficiantly enriched gene sets formed by a few genes or a lot of genes are not very reliable, a filter was added so those sets with less than or equal to 5 genes or more than 250 genes were removed. In addition, a filter was set on the Odds Ratio to find any above 1.5, which was a 50% increase over the null Odds Ratio of 1. The table was than ordered by Odds Ratio. 
 
 ```{r}
 goresults <- goresults[goresults$Size >= 5 & goresults$Size <= 250  & goresults$OddsRatio >= 1.5, ]
 goresults <- goresults[order(goresults$OddsRatio, decreasing=TRUE), ]
 goresults
 ```
+The table above identified GO terms of interest from the GO analysis. Some interesting terms related to lung cancer include signal complex assembly, ceramid transport, positive regulation of cyclin-dependent protein serine/threonine kinase actvity, and mRNA splice site selection.
 
 ## Session information
 
