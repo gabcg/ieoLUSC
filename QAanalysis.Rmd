@@ -46,7 +46,7 @@ Information can already be obtained. For example, that the file contains `r dim(
 
 Next, the column (phenotypic) data can be explored, which in this case corresponds to clinical variables and their corresponding metadata. For example, the column "type" consists of tumor and normal labels. Other information such as gender, tumor stage, and smoking status is also shown.
 
-In any case, all the possible labels can be accessed with the last line of code of the code block below, which returns two columns of information about the clinical variables. One called `labelDescription` contains a succint description of the variable, often not more self-explanatory than the variable name itself, and the other called `CDEID corresponds to the so-called `Common Data Element (CDE)` identifier. This identifier can be used in https://cdebrowser.nci.nih.gov to search for further information about the associated clinical variable using the `Advanced search` form and the `Public ID` attribute search.
+In any case, all the possible labels can be accessed with the last line of code of the code block below, which returns two columns of information about the clinical variables. One called `labelDescription` contains a succint description of the variable, often not more self-explanatory than the variable name itself, and the other called `CDEID` corresponds to the so-called *Common Data Element (CDE) identifier*. This identifier can be used in https://cdebrowser.nci.nih.gov to search for further information about the associated clinical variable using the *Advanced search* form and the *Public ID* attribute search.
 
 ```{r}
 dim(colData(se.unpaired))
