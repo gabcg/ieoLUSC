@@ -58,7 +58,7 @@ In addition to identifying differential expressed genes by adjusting surrogate v
 
 The first step in running a GSEA was to select a collection of gene sets from the MSigDB gene set collections provided by the Broad Institute. The C2 collection contained 3272 computational gene sets made up of cancer-oriented microarray data.
 
-```{r}
+```{r message=FALSE}
 library(GSEABase)
 
 geneUniverse <- rownames(se.filt)
@@ -159,7 +159,7 @@ In addition to the GSEA, a gene set variation analysis (GSVA) was performed. Thi
 
 In order to do this, a matrix was created with the number of gene sets and an enrichment score that indicates sample-wise gene-level summaries of expression. Since gene sets with a small amount of genes don't provide much information, a filter was set to remove those gene sets with 5 or less genes.
 
-```{r}
+```{r message=FALSE}
 library(GSVA)
 GSexpr <- gsva(assays(se.filt)$logCPM, gsc, min.sz=5, max.sz=300, verbose=FALSE)
 dim(GSexpr)
@@ -198,7 +198,7 @@ The next step was to complete a gene ontology analysis. This procedure was compl
 
 First, a parameter object was built that specified the gene universe of interest, the set of `r length(DEgenes)` DE genes, the ontology, and other information. The ontology selected was "BP", which matched genes to the Biological Processes associated with the GO Terms.
 
-```{r}
+```{r message=FALSE}
 geneUniverse <- rownames(se.filt_go)
 length(geneUniverse)
 
