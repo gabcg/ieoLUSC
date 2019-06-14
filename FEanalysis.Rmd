@@ -99,7 +99,7 @@ This left `r dim(dge.filt)[1]` genes to be analyzed among `r dim(dge.filt)[2]` g
 ```{r}
 patientid <- substr(colnames(se.filtgsea), 9, 12)
 mod <- model.matrix(~type + patientid, data = colData(se.filtgsea))
-mod0 <- model.matrix(~ patientid, data = colData(se.filtgsea))
+mod0 <- model.matrix(~patientid, data = colData(se.filtgsea))
 sv <- sva(assays(se.filtgsea)$logCPM, mod, mod0)
 
 # Add surrogates to the model
@@ -177,9 +177,9 @@ DEgs <- rownames(tt[tt$adj.P.Val < 0.01, , drop = FALSE])
 length(DEgs)
 ```
 
-The `r length(DEgs)` gene sets that are differentially expressed at 1% FDR are shown in red in Figure \@ref(fig:volcanoplot-GVSA-SVA).
+The `r length(DEgs)` gene sets that are differentially expressed at 1% FDR are shown in red in Figure \@ref(fig:volcanoplot-GVSA).
 
-```{r volcanoplot-GVSA-SVA, echo=FALSE, out.width="400px", fig.cap="Volcano and MA plots for GVSA"}
+```{r volcanoplot-GVSA, echo=FALSE, out.width="400px", fig.cap="Volcano and MA plots for GVSA"}
 plot(tt$logFC, -log10(tt$P.Value), xlab="Log2 fold-change", ylab="-log10 P-value", 
      pch=".", cex=2, col=grey(0.75), cex.axis=1, cex.lab=1, las=1)
 posx <- tt[tt$adj.P.Val < 0.01, "logFC"] 
@@ -203,7 +203,7 @@ params <- new("GOHyperGParams", geneIds=DEgenes, universeGeneIds=geneUniverse,
             pvalueCutoff=0.01, testDirection="over")
 ```
 
-In the GO analysis, GO terms can sometime overlap. Therefore, a conditional test was chosen. An Odds Ratio of "Inf" indicated that all genes within a gene set were differentially expressed.
+In gene ontology analysis, GO terms can sometime overlap. Therefore, a conditional test was chosen. An Odds Ratio of "Inf" indicated that all genes within a gene set were differentially expressed.
 
 ```{r}
 conditional(params) <- TRUE
@@ -221,7 +221,8 @@ goresults <- goresults[goresults$Size >= 5 & goresults$Size <= 250  & goresults$
 goresults <- goresults[order(goresults$OddsRatio, decreasing=TRUE), ]
 goresults
 ```
-The table above identified GO terms of interest from the GO analysis. Some interesting terms related to lung cancer include signal complex assembly, ceramid transport, positive regulation of cyclin-dependent protein serine/threonine kinase actvity, and mRNA splice site selection.
+
+The table above identified GO terms of interest from the analysis. Some interesting terms related to lung cancer include signal complex assembly, ceramid transport, positive regulation of cyclin-dependent protein serine/threonine kinase actvity, and mRNA splice site selection.
 
 ## Session information
 
