@@ -167,11 +167,11 @@ dge.filt <- dge[mask, ]
 dim(dge.filt)
 ```
 
-A this point, there is a total of `r dim(se.unpaired)[1]` genes and `r dim(se.unpaired)[2]` samples. The un-normalized versions of the filtered expression data are stored.
+A this point, there are a total of `r dim(se.unpaired)[1]` genes and `r dim(se.unpaired)[2]` samples. The un-normalized versions of the filtered expression data are stored.
 
 ```{r}
-saveRDS(se.filt, file.path("results", "se.paired.filt.unnorm.rds"))
-saveRDS(dge.filt, file.path("results", "dge.paired.filt.unnorm.rds"))
+saveRDS(se.filt, file.path("results", "se.paired.gfilt.unnorm.rds"))
+saveRDS(dge.filt, file.path("results", "dge.paired.gfilt.unnorm.rds"))
 ```
 
 ## Normalization
@@ -191,8 +191,8 @@ assays(se.filt)$logCPM <- cpm(dge.filt, log=TRUE, normalized.lib.sizes=TRUE, pri
 Finally, the normalized versions of the filtered expression data are stored.
 
 ```{r}
-saveRDS(se.filt, file.path("results", "se.paired.filt.rds"))
-saveRDS(dge.filt, file.path("results", "dge.paired.filt.rds"))
+saveRDS(se.filt, file.path("results", "se.paired.gfilt.norm.rds"))
+saveRDS(dge.filt, file.path("results", "dge.paired.gfilt.norm.rds"))
 ```
 
 ## MA-plots
@@ -393,10 +393,6 @@ legend("topright", paste("Batch", sort(unique(batch)), levels(factor(new.portion
 Again, only the `8623-tumor` sample does not cluster with the rest of the tumor samples. This sample will be removed from the data before further analysis. For this, new files will be saved without those samples.
 
 ```{r}
-
-dim(se.filt)
-dim(dge.filt)
-
 number <- as.character(8623)
 
 se.filt <- se.filt[ ,!is.element(substr(colnames(se.filt), 9, 12), number)]
@@ -404,6 +400,9 @@ dge.filt <- DGEList(counts=assays(se.filt)$counts, genes=mcols(se.filt))
 
 dim(se.filt)
 dim(dge.filt)
+
+saveRDS(se.filt, file.path("results", "se.paired.gsfilt.norm.rds"))
+saveRDS(dge.filt, file.path("results", "dge.paired.gsfilt.norm.rds"))
 ```
 
 This leaves a number of `r dim(se.filt)[1]` and  `r dim(se.filt)[2]` samples, of which  `r sum(se.filt$type == 'tumor', na.rm = TRUE)` are tumoral and `r sum(se.filt$type == 'normal', na.rm = TRUE)`.

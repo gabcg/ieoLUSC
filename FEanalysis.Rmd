@@ -25,24 +25,34 @@ opts_chunk$set(cache=TRUE,
                fig.align="center",
                comment="")
 
+# Raw data
 se.unpaired <- readRDS(file.path("rawCounts", "seLUSC.rds"))
 dg.unpaired <- readRDS(file.path("results", "dge.rds"))
 
+# Paired raw data
 se <- readRDS(file.path("results", "se.paired.rds"))
 dge <- readRDS(file.path("results", "dge.paired.rds"))
 
-se.filt.unnorm <- readRDS(file.path("results", "se.paired.filt.unnorm.rds"))
-dge.filt.unnorm <- readRDS(file.path("results", "dge.paired.filt.unnorm.rds"))
-se.filt_go <- readRDS(file.path("results", "se.paired.filt2.rds"))
-se.filt <- readRDS(file.path("results", "se.paired.filt2.rds"))
-dge.filt <- readRDS(file.path("results", "dge.paired.filt2.rds"))
+# Unnormalized data with low expression genes filtered out
+se.gfilt.unnorm <- readRDS(file.path("results", "se.paired.gfilt.unnorm.rds"))
+dge.filt.unnorm <- readRDS(file.path("results", "dge.paired.gfilt.unnorm.rds.rds"))
 
+# Normalized data with low expression genes filtered out
+se.gfilt.norm <- readRDS(file.path("results", "se.paired.gfilt.norm.rds"))
+dge.gfilt.norm <- readRDS(file.path("results", "dge.paired.gfilt.norm.rds"))
+
+# Normalized data with low expression genes and one sample filtered out
+se.filt <- readRDS(file.path("results", "se.paired.gsfilt.norm.rds"))
+dge.filt <- readRDS(file.path("results", "dge.paired.gsfilt.norm.rds"))
+
+
+# Differentially expressed genes list
 DEgenes <- readRDS(file.path("results", "DEgenes.rds"))
 ```
 
-## Functional enrichmentc analysis with surogate variable adjustment
+# Functional enrichment analysis
 
-### Gene set enrichment analysis (GSEA)
+## Gene set enrichment analysis (GSEA)
 
 In addition to identifying differential expressed genes by adjusting surrogate variables in the differential expression analysis, a gene set enrichment analysis (GSEA) was also completed. This procedure provides more sensitivity in identifying gene expression changes. This analysis assesses how genes are behaving differently between two phenotypic states. The phenotypic states in this study are tumor and normal samples. The analysis calculates an enrichment score for each gene set. This score provides information on the changes in gene expression by inidividual genes in the gene set. 
 
@@ -143,7 +153,7 @@ length(DEgs)
 
 As shown, `r length(DEgs)` gene sets were differentially expressed.
 
-### Gene set variation analysis (GSVA)
+## Gene set variation analysis (GSVA)
 
 In addition to the GSEA, a gene set variation analysis (GSVA) was performed. This differs from the standard GSEA by utilizing a gene set by sample matrix rather than a gene by sample matrix. This difference allowed for the pathway enrichment for each individual sample to be analyzed.
 
@@ -182,7 +192,7 @@ posy <- -log10(tt[tt$adj.P.Val < 0.01, "P.Value"])
 points(posx, posy, pch=".", cex=2, col="black")
 ```
 
-### Gene Ontology Analysis
+## Gene Ontology analysis
 
 The next step was to complete a gene ontology analysis. This procedure was completed to see if any differentially expressed genes were associated with certain biological processes defined by the Gene Ontology system. 
 
