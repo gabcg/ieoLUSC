@@ -55,7 +55,7 @@ library(limma)
 
 # Obtain the patient ID, as the analysis is paired
 patientid <- substr(colnames(se.filt), 9, 12)
-se.filt$type <- relevel(se.filt$type, ref = "normal")
+#se.filt$type <- relevel(se.filt$type, ref = "normal")
 
 # Build the model (mod) and null (mod0) matrices 
 mod <- model.matrix(~type + patientid, data = colData(se.filt))
@@ -111,7 +111,7 @@ The differential expression analysis results in `r length(signDEgenes)` signific
 
 ```{r}
 tt.sign <- tt[tt$adj.P.Val < FDRcutoff,]
-DEgenes <- rownames(tt.sign)[abs(tt.sign$logFC) > 3]
+DEgenes <- rownames(tt.sign)[abs(tt.sign$logFC) > 2]
 
 length(DEgenes)
 saveRDS(DEgenes, file.path("results", "DEgenes.rds"))
@@ -121,7 +121,7 @@ So we are finally calling differentially expressed to `r length(DEgenes)` genes.
 
 ```{r chromosomedistr, out.width="800px", fig.cap="Chromosome distribution of the differentially expressed genes"}
 #sort(table(tt$chr[tt$adj.P.Val < FDRcutoff]), decreasing = TRUE)
-sort(table(tt$chr[abs(tt$logFC) > 3]), decreasing = TRUE)
+sort(table(tt$chr[abs(tt$logFC) > 2]), decreasing = TRUE)
 
 #plot(sort(table(tt$chr[tt$adj.P.Val < FDRcutoff & !grepl(".*[A|v][1]*$", tt$chr, perl=TRUE)]), decreasing = TRUE), main = "DE genes chromosome distribution", ylab = "Number of DE genes", xlab = "Chromosome", cex.axis = 0.7)
 
