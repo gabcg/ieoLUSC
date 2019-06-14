@@ -410,6 +410,7 @@ saveRDS(dge.filt, file.path("results", "dge.paired.gsfilt.norm.rds"))
 ```
 
 This leaves a number of `r dim(se.filt)[1]` and  `r dim(se.filt)[2]` samples, of which  `r sum(se.filt$type == 'tumor', na.rm = TRUE)` are tumoral and `r sum(se.filt$type == 'normal', na.rm = TRUE)` are normal.
+This leaves a number of `r dim(se.filt)[1]` genes and `r dim(se.filt)[2]` samples, of which `r sum(se.filt$type == 'tumor', na.rm = TRUE)` are tumoral and `r sum(se.filt$type == 'normal', na.rm = TRUE)` normal.
 
 ## Session information
 
