@@ -390,7 +390,7 @@ plot(sampleDendrogram, main="Hierarchical clustering of samples")
 legend("topright", paste("Batch", sort(unique(batch)), levels(factor(new.portionanalyte))), fill=sort(unique(batch)))
 ```
 
-Again, only the `8623-tumor` sample doesn't cluster with the rest of the tumor samples. This sample will be removed from the data before further analysis.
+Again, only the `8623-tumor` sample does not cluster with the rest of the tumor samples. This sample will be removed from the data before further analysis. For this, new files will be saved without those samples.
 
 ```{r}
 
@@ -406,6 +406,7 @@ dim(se.filt)
 dim(dge.filt)
 ```
 
+This leaves a number of `r dim(se.filt)[1]` and  `r dim(se.filt)[2]` samples, of which  `r sum(se.filt$type == 'tumor', na.rm = TRUE)` are tumoral and `r sum(se.filt$type == 'normal', na.rm = TRUE)`.
 
 ## Session information
 
