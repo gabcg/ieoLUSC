@@ -44,10 +44,8 @@ dge.gfilt.norm <- readRDS(file.path("results", "dge.paired.gfilt.norm.rds"))
 se.filt <- readRDS(file.path("results", "se.paired.gsfilt.norm.rds"))
 dge.filt <- readRDS(file.path("results", "dge.paired.gsfilt.norm.rds"))
 
-# Differentially expressed genes lists
+# Differentially expressed genes list
 DEgenes <- readRDS(file.path("results", "DEgenes.rds"))
-downDEgenes <- readRDS(file.path("results", "DEgenes_down.rds"))
-upDEgenes <- readRDS(file.path("results", "DEgenes_up.rds"))
 ```
 
 # Functional enrichment analysis
