@@ -135,13 +135,6 @@ plot(sort(table(ttc$chr[abs(ttc$logFC) > 2 & !grepl(".*[A|v][1]*$", ttc$chr, per
 
 The distribution is shown in Figure \@ref(fig:chromosomedistr), and it does not correspond to a distribution based on the chromosome size, as some chromosomes are located higher in the ranking than what would be expected by its size. The chromosome Y does not have any differentially expressed gene.
 
-A list of the top 10 differentially expressed genes passing both thresholds can be obtained:
-
-```{r}
-top <- order(fit$lods[, 2], decreasing = TRUE)[1:10]
-fit$genes$symbol[top]
-```
-
 ## Diagnostics
 
 The distribution of raw p-values and the QQ plot moderated t-statistics, displayed in Figure \@ref(fig:pvalues-tstats), can be used as a diagnosis of the tests performed.
@@ -157,9 +150,13 @@ Under the null hypothesis, which is that most genes are not differentially expre
 
 Regarding the QQ plot, it represents the quantiles of the data sample against the theoretical distribution they should follow. The diagonal represents the null hypothesis. Most genes are off-diagonal, indicating differential expression. The fact tha most of the genes are far from the null hypothesis is a measure of the significance of the results.
 
-The differential expression results are diagnosed with volcano and MA plots, in which the top 10 differentially expressed genes are highlighted as shown in Figure \@ref(fig:volcano-ma-plots). Volcano plots summarize a measure of significance, such as the p-values (in logarithmic scale, in this case);  <!--TODO: expl plots-->
+The differential expression results are diagnosed with volcano and MA plots, in which the top 10 differentially expressed genes are highlighted as shown in Figure \@ref(fig:volcano-ma-plots). Volcano plots are scatter plots that summarize a measure of significance, such as the p-values (which can be in logarithmic scale as the plot below), and the log-fold change, which represents the measure of differential expression. Significant results will appear towards the plot, while fold changes increase to right for upregulated genes and to left for downregulated genes.
+
+The top differentially expressed genes are tagged for both plots.
 
 ```{r volcano-ma-plots, out.width="800px", fig.cap="Volcano and MA plots for DE analysis without SVA."}
+top <- order(fit$lods[, 2], decreasing = TRUE)[1:10]
+fit$genes$symbol[top]
 par(mfrow = c(1, 2), mar = c(4, 5, 3, 2))
 
 volcanoplot(fit, coef = 2, highlight = 10, names = fit$genes$symbol, main = "Volcano Plot")
@@ -168,6 +165,8 @@ limma::plotMA(fit, coef = 2, status = rownames(fit$lods) %in% signDEgenes, legen
 main = "MA Plot", hl.pch = 46, hl.cex = 4, bg.pch = 46, bg.cex = 3, las = 1)
 text(fit$Amean[top], fit$coef[top, 2], fit$genes$symbol[top], cex = 0.5, pos = 4)
 ```
+
+Both the volcano and MA plot show that the results do not show problems such as unexpected trends.
 
 ## Session information
 
