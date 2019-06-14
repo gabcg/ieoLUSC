@@ -111,12 +111,19 @@ The differential expression analysis results in `r length(signDEgenes)` signific
 ```{r}
 tt.sign <- tt[tt$adj.P.Val < FDRcutoff,]
 DEgenes <- rownames(tt.sign)[abs(tt.sign$logFC) > 2]
+downDEgenes <- rownames(tt.sign)[tt.sign$logFC < -2]
+upDEgenes <- rownames(tt.sign)[tt.sign$logFC > 2]
 
 length(DEgenes)
+length(downDEgenes)
+length(upDEgenes)
+
 saveRDS(DEgenes, file.path("results", "DEgenes.rds"))
+saveRDS(downDEgenes, file.path("results", "DEgenes_down.rds"))
+saveRDS(upDEgenes, file.path("results", "DEgenes_up.rds"))
 ```
 
-So we are finally calling differentially expressed to `r length(DEgenes)` genes. As we added the chromosome information to the table of results, the chromosome distribution of these genes can be obtained. 
+So we are finally calling differentially expressed to `r length(DEgenes)` genes, of which `r length(downDEgenes)` are downregulated and `r length(upDEgenes)` upregulated. As we added the chromosome information to the table of results, the chromosome distribution of these genes can be obtained. 
 
 ```{r chromosomedistr, out.width="800px", fig.cap="Chromosome distribution of the differentially expressed genes"}
 #sort(table(tt$chr[tt$adj.P.Val < FDRcutoff]), decreasing = TRUE)
