@@ -28,7 +28,7 @@ dge <- readRDS(file.path("results", "dge.paired.rds"))
 
 # Unnormalized data with low expression genes filtered out
 se.gfilt.unnorm <- readRDS(file.path("results", "se.paired.gfilt.unnorm.rds"))
-dge.filt.unnorm <- readRDS(file.path("results", "dge.paired.gfilt.unnorm.rds.rds"))
+dge.filt.unnorm <- readRDS(file.path("results", "dge.paired.gfilt.unnorm.rds"))
 
 # Normalized data with low expression genes filtered out
 se.gfilt.norm <- readRDS(file.path("results", "se.paired.gfilt.norm.rds"))
