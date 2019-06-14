@@ -51,7 +51,6 @@ Even if no known sources of variation were found, surrogate variables representi
 
 ```{r mean-variance, message=FALSE, out.width="800px", fig.cap="Mean-variance plot for DE analysis."}
 library(sva)
-library(limma)
 
 # Obtain the patient ID, as the analysis is paired
 patientid <- substr(colnames(se.filt), 9, 12)
@@ -111,7 +110,7 @@ The differential expression analysis results in `r length(signDEgenes)` signific
 
 ```{r}
 tt.sign <- tt[tt$adj.P.Val < FDRcutoff,]
-DEgenes <- rownames(tt.sign)[abs(tt.sign$logFC) > 3]
+DEgenes <- rownames(tt.sign)[abs(tt.sign$logFC) > 2]
 
 length(DEgenes)
 saveRDS(DEgenes, file.path("results", "DEgenes.rds"))

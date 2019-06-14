@@ -44,9 +44,9 @@ table(se.unpaired$type)
 
 Information can already be obtained. For example, that the file contains `r dim(se.unpaired)[1]` genes from a total of `r dim(se.unpaired)[2]` samples. Of this samples, `r sum(se.unpaired$type == 'tumor', na.rm = TRUE)` are tumor samples and `r sum(se.unpaired$type == 'normal', na.rm = TRUE)` are normal samples, which matches the information of the dataset from The Cancer Genome Atlas (TCGA) program.
 
-Next, the column (phenotypic) data can be explored, which in this case corresponds to clinical variables and their corresponding metadata. For example, the column "type" consists of tumor and normal labels. Other information such as gender, tumor stage, and smoking status are also shown.
+Next, the column (phenotypic) data can be explored, which in this case corresponds to clinical variables and their corresponding metadata. For example, the column "type" consists of tumor and normal labels. Other information such as gender, tumor stage, and smoking status is also shown.
 
-In any case, all the possible labels can be accessed with the last line of code of the code block below, which returns two columns of information about the clinical variables. One called `labelDescription` contains a succint description of the variable, often not more self-explanatory than the variable name itself, and the other called 'CDEID' corresponds to the so-called `Common Data Element (CDE)` identifier. This identifier can be use in https://cdebrowser.nci.nih.gov to search for further information about the associated clinical variable using the `Advanced search` form and the `Public ID` attribute search.
+In any case, all the possible labels can be accessed with the last line of code of the code block below, which returns two columns of information about the clinical variables. One called `labelDescription` contains a succint description of the variable, often not more self-explanatory than the variable name itself, and the other called `CDEID corresponds to the so-called `Common Data Element (CDE)` identifier. This identifier can be used in https://cdebrowser.nci.nih.gov to search for further information about the associated clinical variable using the `Advanced search` form and the `Public ID` attribute search.
 
 ```{r}
 dim(colData(se.unpaired))
@@ -79,7 +79,7 @@ se <- se.unpaired[ ,mask]
 saveRDS(se, file.path("results", "se.paired.rds"))
 ```
 
-Since this data is unprocessed, a first step of quality assessment and normalization must be performed. To do this, the [edgeR](http://bioconductor.org/packages/edgeR) R/Bioconductor package is loaded. This requires the creation of a `DGEList' object, as the package does not work directly with `SummarizedExperiment` objects. In any case, updates to one of the objects will be reflected in the other.
+Since this data is unprocessed, a first step of quality assessment and normalization must be performed. To do this, the [edgeR](http://bioconductor.org/packages/edgeR) R/Bioconductor package is loaded. This requires the creation of a `DGEList object, as the package does not work directly with `SummarizedExperiment` objects. In any case, updates to one of the objects will be reflected in the other.
 
 ```{r, message=FALSE}
 library(edgeR)
@@ -88,7 +88,7 @@ dge <- DGEList(counts=assays(se)$counts, genes=mcols(se))
 saveRDS(dge, file.path("results", "dge.paired.rds"))
 ```
 
-One way of normalizing is to use the counts per million (CPM) values. This value is calculated by dividing the number of counts of each sample by 1 million. Instead of using this directly, the $\log_2$ CPM values of expression are calculated as they have nicer distributional properties than raw counts or non-logged CPM units. This information is stored as an additional assay element to ease their manipulation.
+One way of normalizing is to use the counts per million (CPM) values. This value is calculated by dividing the number of counts of each sample by 1 million. Instead of using this directly, the $log_2$ CPM values of expression are calculated as they have nicer distributional properties than raw counts or non-logged CPM units. This information is stored as an additional assay element to ease its manipulation.
 
 ```{r}
 assays(se)$logCPM <- cpm(dge, log=TRUE, prior.count=0.5)
@@ -167,7 +167,7 @@ dge.filt <- dge[mask, ]
 dim(dge.filt)
 ```
 
-A this point, there are a total of `r dim(se.unpaired)[1]` genes and `r dim(se.unpaired)[2]` samples. The un-normalized versions of the filtered expression data are stored.
+A this point, there are a total of `r dim(se.filt)[1]` genes and `r dim(se.filt)[2]` samples. The unnormalized versions of the filtered expression data are stored.
 
 ```{r}
 saveRDS(se.filt, file.path("results", "se.paired.gfilt.unnorm.rds"))
@@ -176,7 +176,7 @@ saveRDS(dge.filt, file.path("results", "dge.paired.gfilt.unnorm.rds"))
 
 ## Normalization
 
-Next, the normalization factors on the filtered expression data set using the `calcNormFactors` function are calculated.
+Next, the normalization factors on the filtered expression data set are calculated using the `calcNormFactors` function.
 
 ```{r}
 dge.filt <- calcNormFactors(dge.filt)
@@ -197,7 +197,7 @@ saveRDS(dge.filt, file.path("results", "dge.paired.gfilt.norm.rds"))
 
 ## MA-plots
 
-MA-plots of the normalized expression profiles allow us to visualize how one sample compares to the average of the rest of the samples, therefore assessing its quality. Ttumor samples are in Figure \@ref(fig:maPlotsTumor).
+MA-plots of the normalized expression profiles allow us to visualize how one sample compares to the average of the rest of the samples, therefore assessing its quality. Tumor samples are in Figure \@ref(fig:maPlotsTumor).
 
 <!---
 Here we make a MA-plot for each sample. The options 'fig.height' and 'fig.width'
@@ -393,9 +393,13 @@ legend("topright", paste("Batch", sort(unique(batch)), levels(factor(new.portion
 Again, only the `8623-tumor` sample does not cluster with the rest of the tumor samples. This sample will be removed from the data before further analysis. For this, new files will be saved without those samples.
 
 ```{r}
-number <- as.character(8623)
 
-se.filt <- se.filt[ ,!is.element(substr(colnames(se.filt), 9, 12), number)]
+se.gfilt.norm <- se.filt
+dge.gfilt.norm <- dge.filt
+
+mask <- !is.element(substr(colnames(se.filt), 9, 12), as.character(8623))
+
+se.filt <- se.gfilt.norm[ ,mask]
 dge.filt <- DGEList(counts=assays(se.filt)$counts, genes=mcols(se.filt))
 
 dim(se.filt)
@@ -405,7 +409,7 @@ saveRDS(se.filt, file.path("results", "se.paired.gsfilt.norm.rds"))
 saveRDS(dge.filt, file.path("results", "dge.paired.gsfilt.norm.rds"))
 ```
 
-This leaves a number of `r dim(se.filt)[1]` and  `r dim(se.filt)[2]` samples, of which  `r sum(se.filt$type == 'tumor', na.rm = TRUE)` are tumoral and `r sum(se.filt$type == 'normal', na.rm = TRUE)`.
+This leaves a number of `r dim(se.filt)[1]` and  `r dim(se.filt)[2]` samples, of which  `r sum(se.filt$type == 'tumor', na.rm = TRUE)` are tumoral and `r sum(se.filt$type == 'normal', na.rm = TRUE)` are normal.
 
 ## Session information
 
