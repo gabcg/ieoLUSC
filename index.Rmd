@@ -1,14 +1,14 @@
 ---
 title: "Analysis of a TCGA RNA-seq data set on lung squamous cell carcinoma"
 author:
-- name: Gabriel Carbonell Gamón
+- name: Carbonell Gamón, Gabriel
   affiliation:
   - &id Master Programme on Bioinformatics for Health Sciences, Universitat Pompeu Fabra, Barcelona, Spain
   email: gabriel.carbonell01@estudiant.upf.edu
-- name: Aleix Matabacas
+- name: Matabacas Enebral, Aleix
   affiliation: *id
   email: aleix.matabacas01@estudiant.upf.edu
-- name: Austin McKitrick
+- name: McKitrick, Austin
   affiliation: *id
   email: austin.mckitrick01@estudiant.upf.edu
 date: "`r format(Sys.time(), '%B %e, %Y')`"
