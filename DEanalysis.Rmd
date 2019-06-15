@@ -111,12 +111,18 @@ The differential expression analysis results in `r length(signDEgenes)` signific
 ```{r}
 tt.sign <- tt[tt$adj.P.Val < FDRcutoff,]
 DEgenes <- rownames(tt.sign)[abs(tt.sign$logFC) > 2]
+downDEgenes <- rownames(tt.sign)[tt.sign$logFC < -2]
+upDEgenes <- rownames(tt.sign)[tt.sign$logFC > 2]
 
 length(DEgenes)
+length(downDEgenes)
+length(upDEgenes)
+
 saveRDS(DEgenes, file.path("results", "DEgenes.rds"))
 ```
 
-So we are finally calling differentially expressed to `r length(DEgenes)` genes. As we added the chromosome information to the table of results, the chromosome distribution of these genes can be obtained. 
+
+So finally `r length(DEgenes)` genes calling differentially expressed, of which `r length(downDEgenes)` are downregulated and `r length(upDEgenes)` upregulated. As the chromosome information was added to the table of results, the chromosome distribution of these genes can be obtained. 
 
 ```{r chromosomedistr, out.width="800px", fig.cap="Chromosome distribution of the differentially expressed genes"}
 #sort(table(tt$chr[tt$adj.P.Val < FDRcutoff]), decreasing = TRUE)
@@ -146,7 +152,7 @@ abline(0, 1, lwd = 2)
 
 Under the null hypothesis, which is that most genes are not differentially expressed, the raw p-value distribution should be uniform with a peak at low p-values for the truly DE genes. This coincides with the observed plot.
 
-Regarding the QQ plot, it represents the quantiles of the data sample against the theoretical distribution they should follow. The diagonal represents the null hypothesis. Most genes are off-diagonal, indicating differential expression. The fact tha most of the genes are far from the null hypothesis is a measure of the significance of the results.
+Regarding the QQ plot, it represents the quantiles of the data sample against the theoretical distribution they should follow. The diagonal represents the null hypothesis. Most genes are off-diagonal, indicating differential expression. The fact that most of the genes are far from the null hypothesis is a measure of the significance of the results.
 
 The differential expression results are diagnosed with volcano and MA plots, in which the top 10 differentially expressed genes are highlighted as shown in Figure \@ref(fig:volcano-ma-plots). Volcano plots are scatter plots that summarize a measure of significance, such as the p-values (which can be in logarithmic scale as the plot below), and the log-fold change, which represents the measure of differential expression. Significant results will appear towards the plot, while fold changes increase to right for upregulated genes and to left for downregulated genes.
 
@@ -164,7 +170,7 @@ main = "MA Plot", hl.pch = 46, hl.cex = 4, bg.pch = 46, bg.cex = 3, las = 1)
 text(fit$Amean[top], fit$coef[top, 2], fit$genes$symbol[top], cex = 0.5, pos = 4)
 ```
 
-Both the volcano and MA plot show that the results do not show problems such as unexpected trends.
+Both the volcano and MA plot show that the results do not have problems such as unexpected trends.
 
 ## Session information
 
