@@ -52,9 +52,9 @@ DEgenes <- readRDS(file.path("results", "DEgenes.rds"))
 
 ## Gene set enrichment analysis (GSEA)
 
-In addition to identifying differential expressed genes by adjusting surrogate variables in the differential expression analysis, a gene set enrichment analysis (GSEA) was also completed. This procedure provided more sensitivity in identifying gene expression changes. This analysis assessed how genes are behaving differently between two phenotypic states. The phenotypic states in this study were tumor and normal samples. The analysis calculated an enrichment score for each gene set. This score provided information on the changes in gene expression by inidividual genes in the gene set. 
+In addition to identifying differential expressed genes by adjusting surrogate variables in the differential expression analysis, a gene set enrichment analysis (GSEA) was also completed. This procedure provides more sensitivity in identifying gene expression changes. This analysis assesses how genes are behaving differently between two phenotypic states (normal vs tumor in this case). The analysis calculates an enrichment score for each gene set which provides information on the changes in gene expression by individual genes in the gene set. 
 
-The first step in running a GSEA was to select a collection of gene sets from the MSigDB gene set collections provided by the Broad Institute. The C2 collection contained 3272 computational gene sets made up of cancer-oriented microarray data. This collection was well-curated and large, which made it an ideal candidate to use in the analysis.
+The first step in running a GSEA is to select a collection of gene sets from the *MSigDB* gene set collections provided by the Broad Institute. The C2 collection contains 3272 computational gene sets made up of cancer-oriented microarray data. This collection is well-curated and large, which makes it an ideal candidate to use in the analysis.
 
 ```{r message=FALSE}
 library(GSEABase)
@@ -67,7 +67,7 @@ c2BroadSets
 length(c2BroadSets)
 ```
 
-After the collection was selected for the GSEA, the next step was to map the identifiers from the `r length(c2BroadSets)` C2 gene sets to the dataset being analyzed.
+After the selection of the collection for the GSEA, the next step is to map the identifiers from the `r length(c2BroadSets)` C2 gene sets to the dataset being analyzed.
 
 ```{r}
 gsc <- GeneSetCollection(c(c2BroadSets))
@@ -77,7 +77,7 @@ gsc <- mapIdentifiers(gsc, AnnoOrEntrezIdentifier(metadata(se.filt)$annotation))
 gsc
 ```
 
-A matrix was created to check if the identifiers were properly mapped, or matched to the corresponding identifier in the data set being analyzed. 
+A matrix is created to check if the identifiers were properly mapped, or matched to the corresponding identifier in the data set being analyzed. 
 
 ```{r}
 Im <- incidence(gsc)
@@ -87,14 +87,14 @@ Im <- Im[, colnames(Im) %in% rownames(se.filt)]
 dim(Im)
 ```
 
-Since the genes from the data set being analyzed are the only genes of interest, all genes that were not a part of this data set, denoted by a "0", were discarded.  
+Since the genes from the data set being analyzed are the only genes of interest, all genes that are not a part of this data set, denoted by a "0", are discarded.  
 
 ```{r}
 se.filtgsea <- se.filt[colnames(Im), ]
 dge.filtgsea <- dge.filt[colnames(Im), ]
 ```
 
-This left `r dim(dge.filt)[1]` genes to be analyzed among `r dim(dge.filt)[2]` gene sets from the collection. With the data ready, a SVA was completed without calling any gene differentially expressed. The mean-variance was the same from the previous differential expression analysis so the plot was not displayed.
+This leaves `r dim(dge.filt)[1]` genes to be analyzed among `r dim(dge.filt)[2]` gene sets from the collection. With the data ready, a SVA is completed without calling any gene differentially expressed. The mean-variance is the same from the previous differential expression analysis, so the plot is not displayed.
 
 ```{r}
 patientid <- substr(colnames(se.filtgsea), 9, 12)
@@ -113,14 +113,14 @@ fit <- eBayes(fit)
 tt <- topTable(fit, coef = 2, n = Inf)
 ```
 
-With the t-statistics avaialble, the z-scores were then calculated to see if a shift in gene expression within a gene set was present. First, a filter was set that required the gene sets to have a minimum size of 5 genes.
+With the t-statistics available, the z-scores are then calculated to see if a shift in gene expression within a gene set was present. First, a filter is set that required the gene sets to have a minimum size of 5 genes.
 
 ```{r}
 Im <- Im[rowSums(Im) >= 5, ]
 dim(Im)
 ```
 
-The t-statistics were then stored in a vector in order of the incidence matrix. The z-score was then calculated and sorted by the absolute score. The z-score of 5 indicated that this gene set was about 5 units above the mean. A low z-score suggested the genes in the gene set were not differentially expressed. 
+The t-statistics are then stored in a vector in order of the incidence matrix. The z-score is then calculated and sorted by the absolute score. The z-score of 5 indicates that this gene set is about 5 units above the mean. A low z-score suggests the genes in the gene set are not differentially expressed. 
 
 ```{r}
 tGSgenes <- tt[match(colnames(Im), rownames(tt)), "t"]
@@ -137,7 +137,7 @@ rnkGS <- sort(abs(zS), decreasing = TRUE)
 head(rnkGS)
 ```
 
-A one sample z-test was calculated and a conservative multiple testing adjustment was administered to see if any gene sets were candidates for differentially expressed genes. The reason for completing a multiple testing adjustment was due to gene set overlaps. 
+A one sample z-test is performed and a conservative multiple testing adjustment is administered to see if any gene sets are candidates for differentially expressed genes. The reason for completing a multiple testing adjustment is due to gene set overlaps. 
 
 ```{r}
 pv <- pmin(pnorm(zS), 1 - pnorm(zS))
@@ -146,13 +146,13 @@ DEgs <- names(pvadj)[which(pvadj < 0.01)]
 length(DEgs)
 ```
 
-As shown, `r length(DEgs)` gene sets were differentially expressed.
+As shown, `r length(DEgs)` gene sets are differentially expressed.
 
 ## Gene set variation analysis (GSVA)
 
-In addition to the GSEA, a gene set variation analysis (GSVA) was performed. This differs from the standard GSEA by utilizing a gene set by sample matrix rather than a gene by sample matrix. This difference allowed for the pathway enrichment for each individual sample to be analyzed.
+In addition to the GSEA, a gene set variation analysis (GSVA) is performed. This differs from the standard GSEA by utilizing a gene set by sample matrix rather than a gene by sample matrix. This difference allows for the pathway enrichment for each individual sample to be analyzed.
 
-In order to do this, a matrix was created with the number of gene sets and an enrichment score that indicates sample-wise gene-level summaries of expression. Since gene sets with a small amount of genes don't provide much information, a filter was set to remove those gene sets with 5 or less genes.
+In order to do this, a matrix is created with the number of gene sets and an enrichment score that indicates sample-wise gene-level summaries of expression. Since gene sets with a small amount of genes do not provide much information, a filter is set to remove those gene sets with 5 or less genes.
 
 ```{r message=FALSE}
 library(GSVA)
@@ -160,7 +160,7 @@ GSexpr <- gsva(assays(se.filt)$logCPM, gsc, min.sz=5, max.sz=300, verbose=FALSE)
 dim(GSexpr)
 ```
 
-With the data ready, a SVA was completed without calling any gene differentially expressed.
+With the data ready, a SVA is completed without calling any gene differentially expressed.
 
 ```{r}
 mod <- model.matrix(~se.filt$type + patientid, data = colData(se.filt))
@@ -189,9 +189,9 @@ points(posx, posy, pch=".", cex=2, col="black")
 
 ## Gene Ontology analysis
 
-The next step was to complete a gene ontology analysis. This procedure was completed to see if any differentially expressed genes were associated with certain biological processes defined by the Gene Ontology system. 
+Finallt, a Gene Ontology analysis is completed to see if any differentially expressed genes are associated with certain biological processes defined by the Gene Ontology system. 
 
-First, a parameter object was built that specified the gene universe of interest, the set of `r length(DEgenes)` DE genes, the ontology, and other information. The ontology selected was "BP", which matched genes to the Biological Processes associated with the GO Terms.
+First, a parameter object is built that specifies the gene universe of interest, the set of `r length(DEgenes)` DE genes, the ontology, and other information. The ontology selected is *BP*, which matches genes to the Biological Processes associated with the GO Terms.
 
 ```{r}
 geneUniverse <- rownames(se.filt)
@@ -203,7 +203,7 @@ params <- new("GOHyperGParams", geneIds=DEgenes, universeGeneIds=geneUniverse,
             pvalueCutoff=0.01, testDirection="over")
 ```
 
-In gene ontology analysis, GO terms can sometime overlap. Therefore, a conditional test was chosen. An Odds Ratio of "Inf" indicated that all genes within a gene set were differentially expressed.
+In Gene Ontology analysis, GO terms can sometime overlap. Therefore, a conditional test is chosen. An Odds Ratio of *Inf* indicates that all genes within a gene set were differentially expressed.
 
 ```{r}
 conditional(params) <- TRUE
@@ -214,7 +214,7 @@ goresults <- summary(hgOverCond)
 head(goresults)
 ```
 
-Since signficiantly enriched gene sets formed by a few genes or a lot of genes are not very reliable, a filter was added so those sets with less than or equal to 5 genes or more than 250 genes were removed. In addition, a filter was set on the Odds Ratio to find any above 1.5, which was a 50% increase over the null Odds Ratio of 1. The table was than ordered by Odds Ratio. 
+Since signficiantly enriched gene sets formed by a few genes or a lot of genes are not very reliable, a filter is added so those sets with less than or equal to 5 genes or more than 250 genes are removed. In addition, a filter is set on the Odds Ratio to find any above 1.5, which is a 50% increase over the null Odds Ratio of 1. The table is than ordered by Odds Ratio. 
 
 ```{r}
 goresults <- goresults[goresults$Size >= 5 & goresults$Size <= 250  & goresults$OddsRatio >= 1.5, ]
@@ -222,7 +222,7 @@ goresults <- goresults[order(goresults$OddsRatio, decreasing=TRUE), ]
 goresults
 ```
 
-The table above identified GO terms of interest from the analysis. Some interesting terms related to lung cancer include signal complex assembly, ceramid transport, positive regulation of cyclin-dependent protein serine/threonine kinase actvity, and mRNA splice site selection.
+The table above identifies GO terms of interest from the analysis. Some interesting terms related to lung cancer include signal complex assembly, ceramid transport, positive regulation of cyclin-dependent protein serine/threonine kinase actvity, and mRNA splice site selection.
 
 ## Session information
 
