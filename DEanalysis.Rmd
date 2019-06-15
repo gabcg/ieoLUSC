@@ -41,7 +41,7 @@ dge.filt <- readRDS(file.path("results", "dge.paired.gsfilt.norm.rds"))
 
 # Differential expression analysis
 
-Differential expression analysis consists of identifying changes in gene expression. For RNAseq experiments, this means comparing relative concentrations of RNA molecules. In R, this can be done by using the [limma](http://bioconductor.org/packages/release/bioc/html/limma.html) and [sva](http://bioconductor.org/packages/sva.html) R/Bioconductor packages. 
+Differential expression analysis consists of identifying changes in gene expression. For RNA-seq experiments, this means comparing relative concentrations of RNA molecules. In R, this can be done by using the [limma](http://bioconductor.org/packages/release/bioc/html/limma.html) and [sva](http://bioconductor.org/packages/sva.html) R/Bioconductor packages. 
 
 ## Analysis
 
@@ -85,7 +85,7 @@ res <- decideTests(fit, p.value = FDRcutoff)
 summary(res)
 ```
 
-The summary table displays the upregulated, not significant, and downregulated genes for each variable in the model.
+The summary table displays the up-regulated, not significant, and down-regulated genes for each variable in the model.
 
 Gene metadata such as the gene symbol and the chromosome can be added for an easier interpretation of the obtained statistics to the results table, which is shown below this lines.
 
@@ -99,7 +99,7 @@ tt <- topTable(fit, coef = 2, n = Inf)
 head(tt, n = 20)
 ```
 
-The results table includes relevant statistics such as raw and adjusted p-values. In the case of the later ones, it can be seen some of their values are pretty low, which means that the result is significant. The number of differentially expressed genes under the `r FDRcutoff` FDR cuttoff can be checked by applying a filter to this table.
+The results table includes relevant statistics such as raw and adjusted p-values. In the case of the later ones, it can be seen some of their values are pretty low, which means that the result is significant. The number of differentially expressed genes under the `r FDRcutoff` FDR cutoff can be checked by applying a filter to this table.
 
 ```{r}
 signDEgenes <- rownames(tt)[tt$adj.P.Val < FDRcutoff]
@@ -122,7 +122,7 @@ saveRDS(DEgenes, file.path("results", "DEgenes.rds"))
 ```
 
 
-So finally `r length(DEgenes)` genes calling differentially expressed, of which `r length(downDEgenes)` are downregulated and `r length(upDEgenes)` upregulated. As the chromosome information was added to the table of results, the chromosome distribution of these genes can be obtained. 
+So finally `r length(DEgenes)` genes calling differentially expressed, of which `r length(downDEgenes)` are down-regulated and `r length(upDEgenes)` up-regulated. As the chromosome information was added to the table of results, the chromosome distribution of these genes can be obtained. 
 
 ```{r chromosomedistr, out.width="800px", fig.cap="Chromosome distribution of the differentially expressed genes"}
 #sort(table(tt$chr[tt$adj.P.Val < FDRcutoff]), decreasing = TRUE)
@@ -154,11 +154,11 @@ Under the null hypothesis, which is that most genes are not differentially expre
 
 Regarding the QQ plot, it represents the quantiles of the data sample against the theoretical distribution they should follow. The diagonal represents the null hypothesis. Most genes are off-diagonal, indicating differential expression. The fact that most of the genes are far from the null hypothesis is a measure of the significance of the results.
 
-The differential expression results are diagnosed with volcano and MA plots, in which the top 10 differentially expressed genes are highlighted as shown in Figure \@ref(fig:volcano-ma-plots). Volcano plots are scatter plots that summarize a measure of significance, such as the p-values (which can be in logarithmic scale as the plot below), and the log-fold change, which represents the measure of differential expression. Significant results will appear towards the plot, while fold changes increase to right for upregulated genes and to left for downregulated genes.
+The differential expression results are diagnosed with volcano and MA plots, in which the top 10 differentially expressed genes are highlighted as shown in Figure \@ref(fig:volcano-ma-plots). Volcano plots are scatter plots that summarize a measure of significance, such as the p-values (which can be in logarithmic scale as the plot below), and the log-fold change, which represents the measure of differential expression. Significant results will appear towards the plot, while fold changes increase to right for up-regulated genes and to left for down-regulated genes.
 
 The top differentially expressed genes are tagged for both plots.
 
-```{r volcano-ma-plots, out.width="800px", fig.cap="Volcano and MA plots for DE analysis without SVA."}
+```{r volcano-ma-plots, out.width="800px", fig.cap="Volcano and MA plots for DE analysis."}
 top <- order(fit$lods[, 2], decreasing = TRUE)[1:10]
 fit$genes$symbol[top]
 par(mfrow = c(1, 2), mar = c(4, 5, 3, 2))

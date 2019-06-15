@@ -67,7 +67,7 @@ c2BroadSets
 length(c2BroadSets)
 ```
 
-After the selection of the collection for the GSEA, the next step is to map the identifiers from the `r length(c2BroadSets)` C2 gene sets to the dataset being analyzed.
+After the selection of the collection for the GSEA, the next step is to map the identifiers from the `r length(c2BroadSets)` C2 gene sets to the data set being analyzed.
 
 ```{r}
 gsc <- GeneSetCollection(c(c2BroadSets))
@@ -189,7 +189,7 @@ points(posx, posy, pch=".", cex=2, col="black")
 
 ## Gene Ontology analysis
 
-Finallt, a Gene Ontology analysis is completed to see if any differentially expressed genes are associated with certain biological processes defined by the Gene Ontology system. 
+Finally, a Gene Ontology analysis is completed to see if any differentially expressed genes are associated with certain biological processes defined by the Gene Ontology system. 
 
 First, a parameter object is built that specifies the gene universe of interest, the set of `r length(DEgenes)` DE genes, the ontology, and other information. The ontology selected is *BP*, which matches genes to the Biological Processes associated with the GO Terms.
 
@@ -214,7 +214,7 @@ goresults <- summary(hgOverCond)
 head(goresults)
 ```
 
-Since signficiantly enriched gene sets formed by a few genes or a lot of genes are not very reliable, a filter is added so those sets with less than or equal to 5 genes or more than 250 genes are removed. In addition, a filter is set on the Odds Ratio to find any above 1.5, which is a 50% increase over the null Odds Ratio of 1. The table is than ordered by Odds Ratio. 
+Since significantly enriched gene sets formed by a few genes or a lot of genes are not very reliable, a filter is added so those sets with less than or equal to 5 genes or more than 250 genes are removed. In addition, a filter is set on the Odds Ratio to find any above 1.5, which is a 50% increase over the null Odds Ratio of 1. The table is than ordered by Odds Ratio. 
 
 ```{r}
 goresults <- goresults[goresults$Size >= 5 & goresults$Size <= 250  & goresults$OddsRatio >= 1.5, ]
@@ -222,7 +222,7 @@ goresults <- goresults[order(goresults$OddsRatio, decreasing=TRUE), ]
 goresults
 ```
 
-The table above identifies GO terms of interest from the analysis. Some interesting terms related to lung cancer include signal complex assembly, ceramid transport, positive regulation of cyclin-dependent protein serine/threonine kinase actvity, and mRNA splice site selection.
+The table above identifies GO terms of interest from the analysis. Some interesting terms related to lung cancer include signal complex assembly, ceramid transport, positive regulation of cyclin-dependent protein serine/threonine kinase activity, and mRNA splice site selection.
 
 ## Session information
 
