@@ -95,7 +95,7 @@ dge.filtgsea <- dge.filt[colnames(Im), ]
 dim(dge.filtgsea)
 ```
 
-This leaves `r dim(dge.filtgsea)[1]` genes to be analyzed among `r dim(dge.filtgsea)[2]` gene sets from the collection. With the data ready, a SVA is completed without calling any gene differentially expressed. The mean-variance is the same from the previous differential expression analysis, so the plot is not displayed.
+This leaves `r dim(dge.filtgsea)[1]` genes to be analyzed among `r dim(dge.filtgsea)[2]` samples. With the data ready, a SVA is completed without calling any gene differentially expressed. The mean-variance is the same from the previous differential expression analysis, so the plot is not displayed.
 
 ```{r}
 patientid <- substr(colnames(se.filtgsea), 9, 12)
@@ -145,9 +145,10 @@ pv <- pmin(pnorm(zS), 1 - pnorm(zS))
 pvadj <- p.adjust(pv, method = "fdr")
 DEgs <- names(pvadj)[which(pvadj < 0.01)]
 length(DEgs)
+head(DEgs)
 ```
 
-As shown, `r length(DEgs)` gene sets are differentially expressed.
+As shown, `r length(DEgs)` gene sets are differentially expressed. Among them, we see the cancer microenvironment or adrenocortical tumor makers.
 
 ## Gene set variation analysis (GSVA)
 
@@ -161,7 +162,7 @@ GSexpr <- gsva(assays(se.filt)$logCPM, gsc, min.sz=5, max.sz=300, verbose=FALSE)
 dim(GSexpr)
 ```
 
-With the data ready, a SVA is completed without calling any gene differentially expressed.
+With the data ready, a SVA is completed without calling any gene differentially expressed. Some of the names of the gene sets are outputed below.
 
 ```{r}
 mod <- model.matrix(~se.filt$type + patientid, data = colData(se.filt))
@@ -176,6 +177,7 @@ fit <- eBayes(fit)
 tt <- topTable(fit, coef = 2, n = Inf)
 DEgs <- rownames(tt[tt$adj.P.Val < 0.01, , drop = FALSE])
 length(DEgs)
+head(DEgs)
 ```
 
 The `r length(DEgs)` gene sets that are differentially expressed at 1% FDR are shown in black in Figure \@ref(fig:volcanoplot-GVSA).
