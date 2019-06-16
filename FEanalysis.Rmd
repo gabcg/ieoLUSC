@@ -54,7 +54,7 @@ DEgenes <- readRDS(file.path("results", "DEgenes.rds"))
 
 In addition to identifying differential expressed genes by adjusting surrogate variables in the differential expression analysis, a gene set enrichment analysis (GSEA) was also completed. This procedure provides more sensitivity in identifying gene expression changes. This analysis assesses how genes are behaving differently between two phenotypic states (normal vs tumor in this case). The analysis calculates an enrichment score for each gene set which provides information on the changes in gene expression by individual genes in the gene set. 
 
-The first step in running a GSEA is to select a collection of gene sets from the *MSigDB* gene set collections provided by the Broad Institute. The C2 collection contains 3272 computational gene sets made up of cancer-oriented microarray data. This collection is well-curated and large, which makes it an ideal candidate to use in the analysis.
+The first step in running a GSEA is to select a collection of gene sets from the *MSigDB* gene set collections provided by the Broad Institute. The C2 collection contains 3272 computational gene sets, divided into the following two sub-collections: *Chemical and genetic perturbations (CGP)* and *Canonical pathways (CP)*. Most of the first comes from microarray studies, while the second comes from various databases. The C2 collection is well-curated and large, which makes it an ideal candidate to use in the analysis.
 
 ```{r message=FALSE}
 library(GSEABase)
@@ -95,7 +95,7 @@ dge.filtgsea <- dge.filt[colnames(Im), ]
 dim(dge.filtgsea)
 ```
 
-This leaves `r dim(dge.filt)[1]` genes to be analyzed among `r dim(dge.filt)[2]` gene sets from the collection. With the data ready, a SVA is completed without calling any gene differentially expressed. The mean-variance is the same from the previous differential expression analysis, so the plot is not displayed.
+This leaves `r dim(dge.filtgsea)[1]` genes to be analyzed among `r dim(dge.filtgsea)[2]` gene sets from the collection. With the data ready, a SVA is completed without calling any gene differentially expressed. The mean-variance is the same from the previous differential expression analysis, so the plot is not displayed.
 
 ```{r}
 patientid <- substr(colnames(se.filtgsea), 9, 12)
