@@ -229,15 +229,11 @@ if(any(lo$y > 2) || any(lo$y < -2)){ big_c <- append(big_c,samplename)} else if 
 
 The MA-plots of the tumor samples provide the following insight:
 
-* `r length(big_c)` samples with high differences from the mean, with a threshold ( M > 2 or M < -2). Their MA plots have the regression line in red. Those samples are `r big_c`.
+* `r length(big_c)` samples with high differences from the mean, with a threshold ( M > 2 or M < -2). Their MA plots have the regression line in red.
 * `r length(medium_c)` samples with moderate differences from the mean, which we define as ( M <= 2 and M >= 1 or M >=-2 and M <= -1). Their regression line is brown.
 * `r length(small_c)` samples with discrete differences from the mean as they are (M < 1 or M > -1). Their regression line is green.
 
-The appearance of samples that differ from the mean can be problematic. It is worth identifying the name of these samples to keep track of them in subsequent quality assessments. If they probe to be more problematic in downstream analysis, those samples should be removed together with their normal pairs.
-
-```{r}
-big_c
-```
+The appearance of samples that differ from the mean can be problematic. It is worth identifying the name of these samples to keep track of them in subsequent quality assessments. Concretely, the most problematic ones are `r big_c[1]`, `r big_c[3]` and especially `r big_c[2]`. If they probe to be more problematic in downstream analysis, those samples should be removed together with their normal pairs.
 
 The normal samples are in Figure \@ref(fig:maPlotsNormal).
 
@@ -262,8 +258,8 @@ if(any(lo$y > 2) || any(lo$y < -2)){ big_n <- append(big_n,samplename)} else if 
 
 In this case, the observations are:
 
-* `r length(big_n)` samples with high differences from the mean, with a threshold ( M > 2 or M < -2). Their MA plots have the regression line in red.
-* `r length(medium_n)` samples with moderate differences from the mean, which we define as ( M <= 2 and M >= 1 or M >=-2 and M <= -1). Their regression line is brown.
+* `r length(big_n)` samples with high differences from the mean, with a threshold ( M > 2 or M < -2).
+* `r length(medium_n)` samples with moderate differences from the mean, which we define as ( M <= 2 and M >= 1 or M >=-2 and M <= -1).
 * `r length(small_n)` samples with discrete differences from the mean as they are (M < 1 or M > -1). Their regression line is green.
 
 In conclusion, either important expression-level dependent biases are not observed among the normal samples.
