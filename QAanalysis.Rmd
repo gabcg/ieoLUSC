@@ -207,7 +207,7 @@ control the relative image size in *inches*. The final image size results from
 'out.width' and 'out.height'. More information at http://yihui.name/knitr/options
 --->
 
-```{r maPlotsTumor, fig.height=36, fig.width=14, dpi=120, echo=FALSE, fig.cap="MA-plots of the tumor samples."}
+```{r maPlotsTumor, fig.height=36, fig.width=14, dpi=120, fig.cap="MA-plots of the tumor samples."}
 par(mfrow=c(13, 4), mar=c(4, 5, 3, 1))
 setmp <- se.filt[, se.filt$type == "tumor"]
 dgetmp <- dge.filt[, se.filt$type == "tumor"]
@@ -229,7 +229,7 @@ if(any(lo$y > 2) || any(lo$y < -2)){ big_c <- append(big_c,samplename)} else if 
 
 The MA-plots of the tumor samples provide the following insight:
 
-* `r length(big_c)` samples with high differences from the mean, with a threshold ( M > 2 or M < -2). Their MA plots have the regression line in red.
+* `r length(big_c)` samples with high differences from the mean, with a threshold ( M > 2 or M < -2). Their MA plots have the regression line in red. Those samples are `r big_c`.
 * `r length(medium_c)` samples with moderate differences from the mean, which we define as ( M <= 2 and M >= 1 or M >=-2 and M <= -1). Their regression line is brown.
 * `r length(small_c)` samples with discrete differences from the mean as they are (M < 1 or M > -1). Their regression line is green.
 
@@ -272,7 +272,8 @@ In conclusion, either important expression-level dependent biases are not observ
 
 Batch effects are sub-groups of measurements that have a qualitatively different behavior across conditions and are unrelated to the variables in the study. It is important to determine if batch effects are present to know if any confounding variables are affecting the data.
 
-Potential surrogate of batch effect indicators within normal and tumor samples can be obtained. Given that each sample names corresponds to a TCGA barcode (see https://wiki.nci.nih.gov/display/TCGA/TCGA+barcode), following the strategy described in http://bioinformatics.mdanderson.org/main/TCGABatchEffects:Overview, different elements of the TCGA barcode can be derived from it, and examine their distribution across samples.
+Potential surrogate of batch effect indicators within normal and tumor samples can be obtained. Given that each sample names corresponds to a TCGA barcode (see https://wiki.nci.nih.gov/display/TCGA/TCGA+barcode), following the strategy described in http://bioinformatics.mdanderson.org/main/TCGABatchEffects:Overview,
+different elements of the TCGA barcode can be derived from it, and examine their distribution across samples.
 
 ```{r}
 tss <- substr(colnames(se.filt), 6, 7)
