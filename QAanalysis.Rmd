@@ -235,7 +235,7 @@ The MA-plots of the tumor samples provide the following insight:
 
 The appearance of samples that differ from the mean can be problematic. It is worth identifying the name of these samples to keep track of them in subsequent quality assessments. Concretely, the most problematic ones are `r big_c[1]`, `r big_c[3]` and especially `r big_c[2]`. If they probe to be more problematic in downstream analysis, those samples should be removed together with their normal pairs.
 
-The normal samples are in Figure \@ref(fig:maPlotsNormal).
+The normal samples are in Figure \@ref(fig:maPlotsNormal). The code to generate them is not shown as it is similar to the previous one, but filtering for normal samples.
 
 ```{r maPlotsNormal, fig.height=36, fig.width=14, dpi=120, echo=FALSE, fig.cap="MA-plots of the normal samples."}
 par(mfrow=c(13, 4), mar=c(4, 5, 3, 1))
