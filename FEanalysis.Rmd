@@ -148,7 +148,7 @@ length(DEgs)
 head(DEgs)
 ```
 
-As shown, `r length(DEgs)` gene sets are differentially expressed. Among them, we see the cancer microenvironment or adrenocortical tumor makers.
+As shown, `r length(DEgs)` gene sets are differentially expressed. Among them, we see the cancer microenvironment or adrenocortical tumor markers.
 
 ## Gene set variation analysis (GSVA)
 
