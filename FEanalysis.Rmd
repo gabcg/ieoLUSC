@@ -225,6 +225,23 @@ goresults
 
 The table above identifies GO terms of interest from the analysis. Some interesting terms related to lung cancer include signal complex assembly, ceramid transport, positive regulation of cyclin-dependent protein serine/threonine kinase activity, and mRNA splice site selection.
 
+Gene symbols can be added to the GO results, and save the table of results both to HTML and LaTeX with the following code.
+
+```{r message=FALSE}
+geneIDs <- geneIdsByCategory(hgOverCond)[goresults$GOBPID]
+geneSYMs <- sapply(geneIDs, function(id) select(org.Hs.eg.db, columns = "SYMBOL", key = id, 
+    keytype = "ENTREZID")$SYMBOL)
+geneSYMs <- sapply(geneSYMs, paste, collapse = ", ")
+goresults <- cbind(goresults, Genes = geneSYMs)
+rownames(goresults) <- 1:nrow(goresults)
+
+library(xtable)
+xtab <- xtable(goresults, align = "l|c|r|r|r|r|r|p{3cm}|p{3cm}|")
+print(xtab, file = file.path("results", "goresults.html"), type = "html")
+print(xtab, file = file.path("results", "goresults.tex"), type = "latex")
+```
+
+
 ## Session information
 
 ```{r, message=FALSE}
