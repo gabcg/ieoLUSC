@@ -156,6 +156,8 @@ Regarding the QQ plot, it represents the quantiles of the data sample against th
 
 The differential expression results are diagnosed with volcano and MA plots, in which the top 10 differentially expressed genes are highlighted as shown in Figure \@ref(fig:volcano-ma-plots). Volcano plots are scatter plots that summarize a measure of significance, such as the p-values (which can be in logarithmic scale as the plot below), and the log-fold change, which represents the measure of differential expression. Significant results will appear towards the plot, while fold changes increase to right for up-regulated genes and to left for down-regulated genes.
 
+In the case of the MA plot, the log-fold change is plotted in the y axis, while the average expression of the samples is on the x axis. In this plot, it is expected to see the results centered around zero. Red dots represent significantly differentially expressed genes that are above 2 or below -2 log-fold change.
+
 The top differentially expressed genes are tagged for both plots.
 
 ```{r volcano-ma-plots, out.width="800px", fig.cap="Volcano and MA plots for DE analysis."}
@@ -165,7 +167,7 @@ par(mfrow = c(1, 2), mar = c(4, 5, 3, 2))
 
 volcanoplot(fit, coef = 2, highlight = 10, names = fit$genes$symbol, main = "Volcano Plot")
 
-limma::plotMA(fit, coef = 2, status = rownames(fit$lods) %in% signDEgenes, legend = FALSE,
+limma::plotMA(fit, coef = 2, status = rownames(fit$lods) %in% DEgenes, legend = FALSE,
 main = "MA Plot", hl.pch = 46, hl.cex = 4, bg.pch = 46, bg.cex = 3, las = 1)
 text(fit$Amean[top], fit$coef[top, 2], fit$genes$symbol[top], cex = 0.5, pos = 4)
 ```
