@@ -92,6 +92,7 @@ Since the genes from the data set being analyzed are the only genes of interest,
 ```{r}
 se.filtgsea <- se.filt[colnames(Im), ]
 dge.filtgsea <- dge.filt[colnames(Im), ]
+dim(dge.filtgsea)
 ```
 
 This leaves `r dim(dge.filt)[1]` genes to be analyzed among `r dim(dge.filt)[2]` gene sets from the collection. With the data ready, a SVA is completed without calling any gene differentially expressed. The mean-variance is the same from the previous differential expression analysis, so the plot is not displayed.
@@ -177,7 +178,7 @@ DEgs <- rownames(tt[tt$adj.P.Val < 0.01, , drop = FALSE])
 length(DEgs)
 ```
 
-The `r length(DEgs)` gene sets that are differentially expressed at 1% FDR are shown in red in Figure \@ref(fig:volcanoplot-GVSA).
+The `r length(DEgs)` gene sets that are differentially expressed at 1% FDR are shown in black in Figure \@ref(fig:volcanoplot-GVSA).
 
 ```{r volcanoplot-GVSA, echo=FALSE, out.width="800px", fig.cap="Volcano and MA plots for GVSA"}
 plot(tt$logFC, -log10(tt$P.Value), xlab="Log2 fold-change", ylab="-log10 P-value", 
