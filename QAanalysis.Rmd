@@ -79,7 +79,7 @@ se <- se.unpaired[ ,mask]
 saveRDS(se, file.path("results", "se.paired.rds"))
 ```
 
-Since this data is unprocessed, a first step of quality assessment and normalization must be performed. To do this, the [edgeR](http://bioconductor.org/packages/edgeR) R/Bioconductor package is loaded. This requires the creation of a `DGEList object, as the package does not work directly with `SummarizedExperiment` objects. In any case, updates to one of the objects will be reflected in the other.
+Since this data is unprocessed, a first step of quality assessment and normalization must be performed. To do this, the [edgeR](http://bioconductor.org/packages/edgeR) R/Bioconductor package is loaded. This requires the creation of a `DGEList` object, as the package does not work directly with `SummarizedExperiment` objects. In any case, updates to one of the objects will be reflected in the other.
 
 ```{r, message=FALSE}
 library(edgeR)
